@@ -1,0 +1,40 @@
+{% if card %}
+    {% if card.battlecard %}
+        <h1>{{ card.name }}</h1>
+        {% for card in card.cardset_set.all %}
+            <p>
+                {{ card.set.name }} - {{ card.rarity }} {{ card.cardnum }}
+            </p>
+        {% endfor %}
+        <p>
+            {{ card.battlecard.type }} - {% for sub in card.battlecard.subtype.all %}{{ sub }}{% endfor %}
+            {{ card.battlecard.cardtext }}
+        </p>
+    {% elif card.charcard %}
+        <h1>{{ card.name }} {{ card.subtitle }}</h1>
+        <h3>{{ card.stars }}*  {{ card.charcard.get_faction_display }}</h3>
+        {% for cardset in card.cardset_set.all %}
+            <p>
+                {{ cardset.set.name }} - {{ cardset.rarity }}T {{ cardset.cardnum }}
+            </p>
+        {% endfor %}
+        {% for side in card.charcard.charside_set.all %}
+            <h3>{{ side.get_mode_display }}</h3>
+            <p>
+                {% for trait in side.traits.all %}
+                    {{ trait }}
+                {% endfor %}
+            </p>
+            <p>
+                {{ side.attack }} - {{ side.health }} - {{ side.defense }}
+            </p>
+            <p>
+                {{ side.cardtext }}
+            </p>
+        {% endfor %}
+    {% elif card.stratcard %}
+            <p></p>
+    {% endif %}
+{% else %}
+    <p>Card not found.</p>
+{% endif %}

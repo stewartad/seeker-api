@@ -1,0 +1,11 @@
+{% if cards_list %}
+    <ul>
+    {% for card in cards_list %}
+        {% for card in card.cardset_set.all %}
+            <li><a href="{% url 'detail' card.id %}">{{ card.card.name }} {% if card.card.subtitle %}{{ card.card.subtitle }}{% endif %}</a></li>
+        {% endfor %}
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No Cards are available.</p>
+{% endif %}

@@ -1,0 +1,9 @@
+{% if latest_match_list %}
+    <ul>
+    {% for match in latest_match_list %}
+        <li><a href="{% url 'detail' match.match_id %}">{{ match }}</a></li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No matches are available.</p>
+{% endif %}
