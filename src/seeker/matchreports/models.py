@@ -29,7 +29,7 @@ class Match(models.Model):
 
     def __str__(self):
         reports = Report.objects.filter(match_id=self.match_id)
-        return '{0}-{1}'.format(reports[0], reports[1])
+        return f'{reports[0].user} {reports[0].games}-{reports[1].games} {reports[1].user}'
 
 class User(models.Model):
     user_id = models.AutoField(primary_key=True, blank=True, null=False)
