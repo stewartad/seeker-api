@@ -5,6 +5,7 @@ from . import api
 
 router = routers.SimpleRouter()
 router.register(r'matches', api.MatchViewSet, 'match')
+router.register(r'leaderboard', api.LeaderboardViewSet, 'leaderboard')
 
 urlpatterns = [
     path('', views.index, name='index'),
