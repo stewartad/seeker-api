@@ -41,7 +41,7 @@ class LeaderboardSerializer(serializers.Serializer):
             'name': instance.name,
             'games_played': instance.total_games,
             'games_won': instance.won_games,
-            'winrate': instance.won_games / instance.total_games
+            'winrate': round(instance.won_games / instance.total_games * 100, 1)
         }
 
 class MatchSerializer(serializers.ModelSerializer):
