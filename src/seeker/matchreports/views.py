@@ -13,6 +13,13 @@ def get_leaderboard(guild):
         .order_by('-total_games')
     return queryset
 
+def get_stats(guild, user, time):
+    user = models.User.objects.get(user_id=user)
+    reports = models.Report.objects.filter(user=user, match__date__gt=time, match__guild=guild)
+    total_games = reports.aggregate(Sum('match__reports__games'))
+    won_games = reports.aggregate(Sum('games'))
+    return won_games, total_games
+
 # Create your views here.
 def index(request):
     latest_match_list = models.Match.objects.order_by('-date')[:20]

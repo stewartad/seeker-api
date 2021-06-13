@@ -12,7 +12,6 @@ class Guild(models.Model):
     name = models.TextField()
 
     class Meta:
-        managed = False
         db_table = 'guilds'
 
 
@@ -23,7 +22,6 @@ class Match(models.Model):
     guild = models.ForeignKey(Guild, on_delete=models.CASCADE)
 
     class Meta:
-        managed = False
         db_table = 'matches'
         verbose_name_plural = 'matches'
 
@@ -36,7 +34,6 @@ class User(models.Model):
     name = models.TextField(blank=True, null=True)  # This field type is a guess.
 
     class Meta:
-        managed = False
         db_table = 'users'
 
     def __str__(self):
@@ -51,7 +48,6 @@ class Report(models.Model):
     deck = models.TextField(blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = 'reports'
 
     def __str__(self):

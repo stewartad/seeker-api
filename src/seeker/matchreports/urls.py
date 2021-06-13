@@ -1,7 +1,7 @@
 from django.urls import path, include, re_path
 from rest_framework import routers
 from . import views
-from . import api
+from . import api_viewsets as api
 
 router = routers.SimpleRouter()
 router.register(r'matches', api.MatchViewSet, 'match')

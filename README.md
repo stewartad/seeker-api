@@ -6,6 +6,37 @@ A tftcg site for a new era
 - [ ] Data migration
 - [ ] Users and authentication
 
+## API Request JSON
+
+```json
+{
+    "reports": [
+        {
+            "user": {
+                "id": int,
+                "name": "str",
+            },
+            "deck": "str",
+            "games": int
+        },
+        {
+            "user": {
+                "id": int,
+                "name": "str",
+            },
+            "deck": "str",
+            "games": int
+        }],
+    "guild": {
+        "guild_id": int,
+        "name": "str"
+    },
+    "channel_id": int,
+    "format": "str",
+    "notes": "str"
+}
+```
+
 ## Community
 
 Keep up to date with the tftcg fan-support scene.
