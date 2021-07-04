@@ -1,3 +1,5 @@
+from django.core.exceptions import ObjectDoesNotExist
+from django.http import Http404
 from . import models
 from rest_framework import serializers
 from datetime import datetime, timezone
@@ -6,6 +8,11 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.User
         fields = ('user_id', 'name')
+        extra_kwargs = {
+            'user_id': {
+                'validators': []
+            }
+        }
 
 
 class ReportSerializer(serializers.ModelSerializer):
@@ -20,16 +27,22 @@ class GuildSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Guild
         fields = ('guild_id', 'name')
+        extra_kwargs = {
+            'guild_id': {
+                'validators': []
+            }
+        }
 
 
 class LeaderboardSerializer(serializers.Serializer):
     def to_representation(self, instance):
+        winrate = instance.won_games / instance.total_games if instance.total_games != 0 else 0
         return {
             'user_id': instance.user_id,
             'name': instance.name,
             'games_played': instance.total_games,
             'games_won': instance.won_games,
-            'winrate': round(instance.won_games / instance.total_games * 100, 1)
+            'winrate': winrate
         }
 
 
@@ -46,10 +59,10 @@ class MatchSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         report_list = validated_data.get('reports')
         guild_data = validated_data.get('guild')
-        guild = models.Guild.objects.get_or_create(
-            guild_id=guild_data.get('guild_id'),
-            name = guild_data.get('name')
-        )[0]
+        guild, _ = models.Guild.objects.get_or_create(
+            guild_id=guild_data.get('guild_id'), 
+            defaults={'name': guild_data.get('name')}
+        )
         match = models.Match.objects.create(
             date = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp()),
             channel_id = validated_data.get('channel_id'),
@@ -57,10 +70,10 @@ class MatchSerializer(serializers.ModelSerializer):
         )
         for report in report_list:
             user_data = report.get('user')
-            user = models.User.objects.get_or_create(
+            user, _ = models.User.objects.get_or_create(
                 user_id=user_data.get('user_id'),
-                name=user_data.get('name')
-            )[0]
+                defaults={'name': user_data.get('name')}
+            )
             models.Report.objects.create(
                 user = user,
                 match = match,

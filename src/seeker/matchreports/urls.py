@@ -1,5 +1,6 @@
 from django.urls import path, include, re_path
 from rest_framework import routers
+from rest_framework.schemas import get_schema_view
 from . import views
 from . import api_viewsets as api
 

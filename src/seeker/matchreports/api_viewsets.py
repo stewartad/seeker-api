@@ -23,10 +23,6 @@ class MatchViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     http_method_names = ['get', 'post', 'head']
 
-    def create(self, request, *args, **kwargs):
-        logging.debug(request.data)
-        return super().create(request, *args, **kwargs)
-
     @setup_eager_loading
     def get_queryset(self):
         return models.Match.objects.all()

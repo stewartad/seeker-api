@@ -48,6 +48,8 @@ Discord bot to report match results.
 ### Features
 
 - [ ] REST API
+    - [ ] Time filter for leaderboards/stats
+    - [ ] Proper authentication
 
 ## Card Database
 
