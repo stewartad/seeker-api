@@ -1,5 +1,3 @@
-from django.core.exceptions import ObjectDoesNotExist
-from django.http import Http404
 from . import models
 from rest_framework import serializers
 from datetime import datetime, timezone
