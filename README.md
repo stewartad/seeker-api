@@ -1,10 +1,12 @@
-# Grand Maximus
+# Seeker-API
 
-A tftcg site for a new era
+Webservice providing REST API for SeekerBot
 
 ## TODO
 - [ ] Data migration
 - [ ] Users and authentication
+- [ ] Time filter for leaderboard/stats
+    - Time conversions done by SeekerBot, time filtering will be done using GMT as stored in the database
 
 ## API Request JSON
 
@@ -13,51 +15,26 @@ A tftcg site for a new era
     "reports": [
         {
             "user": {
-                "id": int,
+                "id": 0,
                 "name": "str",
             },
             "deck": "str",
-            "games": int
+            "games": 0
         },
         {
             "user": {
-                "id": int,
+                "id": 0,
                 "name": "str",
             },
             "deck": "str",
-            "games": int
+            "games": 0
         }],
     "guild": {
-        "guild_id": int,
+        "guild_id": 0,
         "name": "str"
     },
-    "channel_id": int,
+    "channel_id": 0,
     "format": "str",
     "notes": "str"
 }
 ```
-
-## Community
-
-Keep up to date with the tftcg fan-support scene.
-
-## SeekerBot
-
-Discord bot to report match results.
-
-### Features
-
-- [ ] REST API
-    - [ ] Time filter for leaderboards/stats
-    - [ ] Proper authentication
-
-## Card Database
-
-Easily reference official and unofficial cards
-
-## Deckbuilder
-
-### Features
-
-- [ ] Inline search of the card database using any card property
-- [ ] Visual preview
