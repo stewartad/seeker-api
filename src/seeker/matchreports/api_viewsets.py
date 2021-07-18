@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions
+from rest_framework import serializers, viewsets, permissions
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 
@@ -27,7 +27,6 @@ class MatchViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return models.Match.objects.all()
 
-
 class LeaderboardViewSet(viewsets.ViewSet):
     permission_classes = [permissions.AllowAny]
     filterset_fields = ['guild', 'channel_id']
@@ -35,12 +34,12 @@ class LeaderboardViewSet(viewsets.ViewSet):
 
     def retrieve(self, request, pk=None):
         queryset = models.User.objects.all()
-        guild = request.query_params.get('guild_id')
+        guild = request.query_params.get('guild')
         user = get_object_or_404(queryset, pk=pk)
         serializer = LeaderboardSerializer(views.get_leaderboard(guild).get(user_id=user.user_id))
         return Response(serializer.data)
 
     def list(self, request):
-        guild = request.query_params.get('guild_id')
+        guild = request.query_params.get('guild')
         serializer = LeaderboardSerializer(views.get_leaderboard(guild), many=True)
         return Response(serializer.data)
