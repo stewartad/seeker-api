@@ -14,6 +14,9 @@ class Guild(models.Model):
     class Meta:
         db_table = 'guilds'
 
+    def __str__(self) -> str:
+        return self.name
+
 
 class Match(models.Model):
     match_id = models.AutoField(primary_key=True)
@@ -27,10 +30,10 @@ class Match(models.Model):
 
     def __str__(self):
         reports = Report.objects.filter(match_id=self.match_id)
-        return f'{reports[0].user} {reports[0].games}-{reports[1].games} {reports[1].user}'
+        return ' '.join([f'{report.user} {report.games}' for report in reports])
 
 class User(models.Model):
-    user_id = models.AutoField(primary_key=True, blank=True, null=False)
+    user_id = models.IntegerField(primary_key=True, blank=True, null=False)
     name = models.TextField(blank=True, null=True)  # This field type is a guess.
 
     class Meta:
@@ -42,7 +45,7 @@ class User(models.Model):
 
 class Report(models.Model):
     report_id = models.AutoField(primary_key=True)
-    user = models.ForeignKey(User, models.CASCADE)
+    user = models.ForeignKey(User, models.CASCADE, related_name='reports')
     match = models.ForeignKey(Match, models.CASCADE, related_name='reports')
     games = models.IntegerField()
     deck = models.TextField(blank=True, null=True)
