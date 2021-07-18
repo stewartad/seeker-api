@@ -35,14 +35,13 @@ class LeaderboardViewSet(viewsets.ViewSet):
     def retrieve(self, request, pk=None):
         queryset = models.User.objects.all()
         guild = request.query_params.get('guild')
+        date = request.query_params.get('date')
         user = get_object_or_404(queryset, pk=pk)
-        serializer = LeaderboardSerializer(views.get_leaderboard(guild).get(user_id=user.user_id))
+        serializer = LeaderboardSerializer(views.get_leaderboard(guild, date).filter(user_id=pk).first())
         return Response(serializer.data)
 
     def list(self, request):
         guild = request.query_params.get('guild')
         date = request.query_params.get('date')
-        if date is None:
-            date = 0
         serializer = LeaderboardSerializer(views.get_leaderboard(guild, date), many=True)
         return Response(serializer.data)

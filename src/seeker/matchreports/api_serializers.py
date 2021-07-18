@@ -34,12 +34,19 @@ class GuildSerializer(serializers.ModelSerializer):
 
 class LeaderboardSerializer(serializers.Serializer):
     def to_representation(self, instance):
-        winrate = instance.won_games / instance.total_games if instance.total_games != 0 else 0
+        won_games = instance.won_games
+        total_games = instance.total_games
+        if won_games is None:
+            won_games = 0
+        if total_games is None:
+            total_games = 0
+
+        winrate = won_games / total_games if total_games != 0 else 0
         return {
             'user_id': instance.user_id,
             'name': instance.name,
-            'games_played': instance.total_games,
-            'games_won': instance.won_games,
+            'games_played': total_games,
+            'games_won': won_games,
             'winrate': winrate
         }
 

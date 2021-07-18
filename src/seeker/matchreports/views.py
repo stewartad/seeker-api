@@ -1,29 +1,36 @@
 from django.db.models.aggregates import Sum
 from django.db.models.expressions import OuterRef, Subquery
+from django.db.models.query import QuerySet
 from . import models
 from django.shortcuts import render
 from django.http import HttpResponse
 
-def get_leaderboard(guild, date=0):
-    # TODO: Filter by date
-    reports = models.Report.objects \
-        .filter(match__guild=guild, match__date__gte=date, user=OuterRef('user_id')) \
-        .values('user_id') \
-        .annotate(game_wins=Sum('games')) \
-        .values('game_wins')[:1]
-    queryset = models.User.objects \
-        .filter(reports__match__guild=guild, reports__match__date__gte=date) \
-        .annotate(won_games=Subquery(reports)) \
-        .annotate(total_games=Sum('reports__match__reports__games')) \
-        .order_by('-total_games')
-    return queryset
+def get_leaderboard(guild=None, date=None):
+    if date is None:
+        date = 0
 
-def get_stats(guild, user, time):
-    user = models.User.objects.get(user_id=user)
-    reports = models.Report.objects.filter(user=user, match__date__gt=time, match__guild=guild)
-    total_games = reports.aggregate(Sum('match__reports__games'))
-    won_games = reports.aggregate(Sum('games'))
-    return won_games, total_games
+    reports = models.Report.objects.all()
+    if guild is not None:
+        reports = reports.filter(match__guild=guild, match__date__gte=date)
+        users = models.User.objects.filter(reports__match__guild=guild)
+    else:
+        users = models.User.objects.all()
+    reports = reports.filter(user=OuterRef('user_id'))
+
+    won_games = reports \
+        .values('user_id') \
+        .annotate(won_games=Sum('games')) \
+        .values('won_games')[:1]
+    total_games = reports \
+        .values('user_id') \
+        .annotate(total_games=Sum('match__reports__games')) \
+        .values('total_games')[:1]
+    queryset = users \
+        .annotate(won_games=Subquery(won_games)) \
+        .annotate(total_games=Subquery(total_games)) \
+        .distinct() \
+        .order_by('-total_games', '-won_games', 'name')
+    return queryset
 
 # Create your views here.
 def index(request):
