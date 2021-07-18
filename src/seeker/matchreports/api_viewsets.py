@@ -41,5 +41,8 @@ class LeaderboardViewSet(viewsets.ViewSet):
 
     def list(self, request):
         guild = request.query_params.get('guild')
-        serializer = LeaderboardSerializer(views.get_leaderboard(guild), many=True)
+        date = request.query_params.get('date')
+        if date is None:
+            date = 0
+        serializer = LeaderboardSerializer(views.get_leaderboard(guild, date), many=True)
         return Response(serializer.data)

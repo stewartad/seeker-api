@@ -4,12 +4,17 @@ from . import models
 from django.shortcuts import render
 from django.http import HttpResponse
 
-def get_leaderboard(guild):
+def get_leaderboard(guild, date=0):
     # TODO: Filter by date
-    reports = models.Report.objects.filter(user=OuterRef('user_id')).values('user_id').annotate(game_wins=Sum('games')).values('game_wins')[:1]
-    queryset = models.User.objects.filter(report__match__guild=guild) \
+    reports = models.Report.objects \
+        .filter(match__guild=guild, match__date__gte=date, user=OuterRef('user_id')) \
+        .values('user_id') \
+        .annotate(game_wins=Sum('games')) \
+        .values('game_wins')[:1]
+    queryset = models.User.objects \
+        .filter(reports__match__guild=guild, reports__match__date__gte=date) \
         .annotate(won_games=Subquery(reports)) \
-        .annotate(total_games=Sum('report__match__reports__games')) \
+        .annotate(total_games=Sum('reports__match__reports__games')) \
         .order_by('-total_games')
     return queryset
 
