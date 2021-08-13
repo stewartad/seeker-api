@@ -87,7 +87,7 @@ class TestMatchAggregation(TestCase):
         first = datetime(cls.now.year, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
 
         # calculate start of each time interval
-        cls.weekstart = first.replace(month=2) - timedelta(days=first.weekday())
+        cls.weekstart = first.replace(month=2) - timedelta(days=first.replace(month=2).weekday())
         cls.nextweekstart = cls.weekstart + timedelta(weeks=1)
         cls.monthstart = first.replace(month=10)
         cls.nextmonthstart = cls.monthstart.replace(month=cls.monthstart.month + 1)
