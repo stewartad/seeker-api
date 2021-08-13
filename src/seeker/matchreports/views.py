@@ -1,4 +1,3 @@
-from datetime import datetime
 from django.db.models.aggregates import Sum
 from django.db.models.expressions import OuterRef, Subquery
 from django.db.models.query import QuerySet
@@ -6,22 +5,20 @@ from . import models
 from django.shortcuts import render
 from django.http import HttpResponse
 
-# def get_leaderboard(guild=None, date=None):
-#     if date is None:
-#         date = 0
 
 def get_leaderboard(guild=None, start_date=None, end_date=None):
-    if start_date is None:
-        start_date = 0
-    if end_date is None:
-        end_date = int(datetime.now().timestamp())
-
     reports = models.Report.objects.all()
     if guild is not None:
-        reports = reports.filter(match__guild=guild, match__date__gte=start_date, match__date__lt=end_date)
+        reports = reports.filter(match__guild=guild)
         users = models.User.objects.filter(reports__match__guild=guild)
     else:
         users = models.User.objects.all()
+    
+    if start_date is not None:
+        reports = reports.filter(match__date__gte=start_date)
+    if end_date is not None:
+        reports = reports.filter(match__date__lt=end_date)
+
     reports = reports.filter(user=OuterRef('user_id'))
 
     won_games = reports \
