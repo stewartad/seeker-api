@@ -1,14 +1,16 @@
 from django.db.models.aggregates import Sum
 from django.db.models.expressions import OuterRef, Subquery
 from django.db.models.query import QuerySet
+from rest_framework.generics import get_object_or_404
 from . import models
 from django.shortcuts import render
 from django.http import HttpResponse
 
 
-def get_leaderboard(guild=None, start_date=None, end_date=None):
+def get_leaderboard(guild_id=None, start_date=None, end_date=None):
     reports = models.Report.objects.all()
-    if guild is not None:
+    if guild_id is not None:
+        guild = get_object_or_404(models.Guild.objects.all(), guild_id=guild_id)
         reports = reports.filter(match__guild=guild)
         users = models.User.objects.filter(reports__match__guild=guild)
     else:
