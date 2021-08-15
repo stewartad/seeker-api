@@ -20,7 +20,7 @@ def setup_eager_loading(get_queryset):
 class MatchViewSet(viewsets.ModelViewSet):
     serializer_class = MatchSerializer
     filterset_fields = ['guild', 'channel_id', 'reports__user']
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated]
     http_method_names = ['get', 'post', 'head']
 
     @setup_eager_loading
@@ -28,7 +28,7 @@ class MatchViewSet(viewsets.ModelViewSet):
         return models.Match.objects.all()
 
 class LeaderboardViewSet(viewsets.ViewSet):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
     filterset_fields = ['guild', 'channel_id']
     http_method_names = ['get', 'head']
 
