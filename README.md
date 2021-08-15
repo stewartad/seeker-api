@@ -6,7 +6,8 @@ Webservice providing REST API for SeekerBot
 - [ ] Data migration
 - [ ] Users and authentication
 - [ ] Undo commands
-- [ ] Time filter for leaderboard/stats
+- [ ] Per-deck stats
+- [x] Time filter for leaderboard/stats
     - Time conversions done by SeekerBot, time filtering will be done using GMT as stored in the database
 
 ## API Request JSON
