@@ -1,52 +1,11 @@
+from django import test
 from django.test import TestCase
 from rest_framework.test import APIRequestFactory, force_authenticate
 from datetime import datetime, timedelta, timezone
 from django.contrib.auth.models import User as DjangoUser
 
 from .models import *
-from .api_viewsets import LeaderboardViewSet, MatchViewSet
-
-# Create your tests here.
-class TestApiPost(TestCase):
-
-    def test_match_report(self):
-        match_request = {
-            'reports': [
-                {
-                    'user': {
-                        'user_id': 10,
-                        'name': 'test1',
-                    },                    
-                    'deck': 'deck1',
-                    'games': 1
-                },
-                {
-                    'user': {
-                        'user_id': 20,
-                        'name': 'test2',
-                    },                    
-                    'deck': 'deck2',
-                    'games': 2
-                }
-            ],
-            'channel_id': 200,
-            'guild': {
-                'guild_id': 1000,
-                'name': 'testguild'
-            },
-        }
-
-        factory = APIRequestFactory()
-        request = factory.post('/seekerbot/api/matches/', match_request, format='json')
-        
-        user = DjangoUser.objects.create_user('admin', 'admin@email.com', 'password')
-        force_authenticate(request, user=user)
-        
-        view = MatchViewSet.as_view({'get': 'list', 'post': 'create'})
-        response = view(request)
-
-        self.assertEqual(response.status_code, 201)
-
+from .api_viewsets import DeckViewSet, LeaderboardViewSet, MatchViewSet
 
 user_yequari = {
     'user_id': 236379624727248897,
@@ -68,7 +27,56 @@ test_guild = {
     'name': 'testguild'
 }
 
-class TestMatchAggregation(TestCase):
+test_channel = 200
+API='/seekerbot/api'
+
+class SeekerTestCase(TestCase):
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.user = DjangoUser.objects.create_user(cls.__name__, 'admin@email.com', 'password')
+        cls.factory = APIRequestFactory()
+        return super().setUpClass()
+
+
+# Create your tests here.
+class TestApiPost(SeekerTestCase):
+
+    def test_match_report(self):
+        match_request = {
+            'reports': [
+                {
+                    'user': {
+                        'user_id': 10,
+                        'name': 'test1',
+                    },                    
+                    'deck': 'deck1',
+                    'games': 1
+                },
+                {
+                    'user': {
+                        'user_id': 20,
+                        'name': 'test2',
+                    },                    
+                    'deck': 'deck2',
+                    'games': 2
+                }
+            ],
+            'channel_id': test_channel,
+            'guild': test_guild
+        }
+
+        request = self.factory.post(f'{API}/matches/', match_request, format='json')
+
+        force_authenticate(request, user=self.user)
+        
+        view = MatchViewSet.as_view({'get': 'list', 'post': 'create'})
+        response = view(request)
+
+        self.assertEqual(response.status_code, 201)
+
+
+class TestMatchAggregation(SeekerTestCase):
     
     @classmethod
     def setUpClass(cls) -> None:
@@ -80,14 +88,6 @@ class TestMatchAggregation(TestCase):
         cls.user1 = user_yequari
         cls.user2 = user_yeq2
         cls.user3 = user_yeq3
-        # cls.guild = Guild.objects.create(**test_guild)
-        # cls.guild2 = Guild.objects.create(guild_id=2000, name='testguild2')
-        # cls.user1 = User.objects.create(**user_yequari)
-        # cls.user2 = User.objects.create(**user_yeq2)
-        # cls.user3 = User.objects.create(**user_yeq3)
-
-        cls.factory = APIRequestFactory()
-        cls.user = DjangoUser.objects.create_user('admin', 'admin@email.com', 'password')
 
         # get current time
         cls.now = datetime.now()
@@ -102,10 +102,10 @@ class TestMatchAggregation(TestCase):
         cls.nextyearstart = cls.yearstart.replace(year=cls.yearstart.year+1)
 
         cls.expected_users = 3
-        cls.expected_weekly = 4
+        cls.expected_weekly = 8
         cls.expected_monthly = 4
-        cls.expected_yearly = 20
-        cls.expected_all = 20
+        cls.expected_yearly = 24
+        cls.expected_all = 24
 
         super().setUpClass()
 
@@ -115,27 +115,15 @@ class TestMatchAggregation(TestCase):
         cls._create_match(cls.guild, cls.weekstart + timedelta(days=0), cls.user1, cls.user2)
         cls._create_match(cls.guild, cls.weekstart + timedelta(days=0), cls.user1, cls.user3)
         cls._create_match(cls.guild, cls.weekstart + timedelta(days=0), cls.user3, cls.user2)
-        # cls._create_match(cls.weekstart + timedelta(days=1), cls.user1, cls.user2)
-        # cls._create_match(cls.weekstart + timedelta(days=1), cls.user1, cls.user3)
-        # cls._create_match(cls.weekstart + timedelta(days=1), cls.user3, cls.user2)
-        # cls._create_match(cls.weekstart + timedelta(days=2), cls.user1, cls.user2)
-        # cls._create_match(cls.weekstart + timedelta(days=2), cls.user1, cls.user3)
-        # cls._create_match(cls.weekstart + timedelta(days=2), cls.user3, cls.user2)
-        # cls._create_match(cls.weekstart + timedelta(days=3), cls.user1, cls.user2)
-        # cls._create_match(cls.weekstart + timedelta(days=3), cls.user1, cls.user3)
-        # cls._create_match(cls.weekstart + timedelta(days=3), cls.user3, cls.user2)
-        # cls._create_match(cls.weekstart + timedelta(days=4), cls.user1, cls.user2)
-        # cls._create_match(cls.weekstart + timedelta(days=4), cls.user1, cls.user3)
-        # cls._create_match(cls.weekstart + timedelta(days=4), cls.user3, cls.user2)
-        # cls._create_match(cls.weekstart + timedelta(days=5), cls.user1, cls.user2)
-        # cls._create_match(cls.weekstart + timedelta(days=5), cls.user1, cls.user3)
-        # cls._create_match(cls.weekstart + timedelta(days=5), cls.user3, cls.user2)
-        # cls._create_match(cls.weekstart + timedelta(days=6), cls.user1, cls.user2)
-        # cls._create_match(cls.weekstart + timedelta(days=6), cls.user1, cls.user3)
-        # cls._create_match(cls.weekstart + timedelta(days=6), cls.user3, cls.user2)
+
+        cls._create_match(cls.guild, cls.weekstart + timedelta(days=6), cls.user1, cls.user2)
+        cls._create_match(cls.guild, cls.weekstart + timedelta(days=6), cls.user1, cls.user3)
+        cls._create_match(cls.guild, cls.weekstart + timedelta(days=6), cls.user3, cls.user2)
+        
         cls._create_match(cls.guild, cls.weekstart + timedelta(days=7), cls.user1, cls.user2)
         cls._create_match(cls.guild, cls.weekstart + timedelta(days=7), cls.user1, cls.user3)
         cls._create_match(cls.guild, cls.weekstart + timedelta(days=7), cls.user3, cls.user2)
+        
         cls._create_match(cls.guild, cls.weekstart + timedelta(days=8), cls.user1, cls.user2)
         cls._create_match(cls.guild, cls.weekstart + timedelta(days=8), cls.user1, cls.user3)
         cls._create_match(cls.guild, cls.weekstart + timedelta(days=8), cls.user3, cls.user2)
@@ -156,7 +144,7 @@ class TestMatchAggregation(TestCase):
         cls._create_match(cls.guild2, cls.weekstart + timedelta(hours=1), cls.user1, cls.user2)
 
     @classmethod
-    def _create_match(cls, guild, date, *users):
+    def _create_match(cls, guild, date=None, *users):
         # creates a match report giving each user 1 win
         # usually this means 2 games per match (i.e.) 1-1
 
@@ -172,7 +160,7 @@ class TestMatchAggregation(TestCase):
             'guild': guild
         }
 
-        request = cls.factory.post('/seekerbot/api/matches/', match_request, format='json')
+        request = cls.factory.post(f'{API}/matches/', match_request, format='json')
         
         force_authenticate(request, user=cls.user)
 
@@ -180,18 +168,17 @@ class TestMatchAggregation(TestCase):
         response = view(request)
         if response.status_code != 201:
             raise Exception()
-        # self.assertEqual(response.status_code, 201)
+
         id = response.data['match_id']
-        Match.objects.filter(match_id=id).update(date=int(date.timestamp()))
-        # match = Match.objects.create(guild=guild, date=int(date.timestamp()))
-        # for user in users:
-        #     Report.objects.create(user=user, match=match, games=1)
+        if date is not None:
+            Match.objects.filter(match_id=id).update(date=int(date.timestamp()))
 
     def test_guild(self):
-        request = self.factory.get('/seekerbot/api/leaderboard',
+        request = self.factory.get(f'{API}/leaderboard',
             {
                 'guild': self.guild2["guild_id"]
-            }, format='json')
+            }, 
+            format='json')
         
         force_authenticate(request, user=self.user)
         view = LeaderboardViewSet.as_view({'get': 'list'})
@@ -204,12 +191,13 @@ class TestMatchAggregation(TestCase):
 
     def test_leaderboard_weekly(self):
         
-        request = self.factory.get('/seekerbot/api/leaderboard',
+        request = self.factory.get(f'{API}/leaderboard',
             {
                 'guild': self.guild["guild_id"],
                 'start_date': int(self.weekstart.timestamp()),
                 'end_date': int(self.nextweekstart.timestamp())
-            }, format='json')
+            }, 
+            format='json')
         
         force_authenticate(request, user=self.user)
         view = LeaderboardViewSet.as_view({'get': 'list'})
@@ -223,12 +211,13 @@ class TestMatchAggregation(TestCase):
             self.assertEquals(entry.get('games_played'), self.expected_weekly)
 
     def test_leaderboard_monthly(self):
-        request = self.factory.get('/seekerbot/api/leaderboard',
+        request = self.factory.get(f'{API}/leaderboard',
             {
                 'guild': self.guild["guild_id"],
                 'start_date': int(self.monthstart.timestamp()),
                 'end_date': int(self.nextmonthstart.timestamp())
-            }, format='json')
+            }, 
+            format='json')
         force_authenticate(request, user=self.user)
         view = LeaderboardViewSet.as_view({'get': 'list'})
         response = view(request)
@@ -241,12 +230,13 @@ class TestMatchAggregation(TestCase):
             self.assertEquals(entry.get('games_played'), self.expected_monthly)
 
     def test_leaderboard_yearly(self):
-        request = self.factory.get('/seekerbot/api/leaderboard',
+        request = self.factory.get(f'{API}/leaderboard',
             {
                 'guild': self.guild["guild_id"],
                 'start_date': int(self.yearstart.timestamp()),
                 'end_date': int(self.nextyearstart.timestamp())
-            }, format='json')
+            }, 
+            format='json')
         
         force_authenticate(request, user=self.user)
         view = LeaderboardViewSet.as_view({'get': 'list'})
@@ -260,10 +250,11 @@ class TestMatchAggregation(TestCase):
             self.assertEquals(entry.get('games_played'), self.expected_yearly)
 
     def test_leaderboard_alltime(self):
-        request = self.factory.get(f'/seekerbot/api/leaderboard',
+        request = self.factory.get(f'{API}/leaderboard',
             {
                 'guild': self.guild["guild_id"]
-            }, format='json')
+            }, 
+            format='json')
         
         force_authenticate(request, user=self.user)
         view = LeaderboardViewSet.as_view({'get': 'list'})
@@ -277,12 +268,13 @@ class TestMatchAggregation(TestCase):
             self.assertEquals(entry.get('games_played'), self.expected_all)
 
     def test_stats_weekly(self):
-        request = self.factory.get(f'/seekerbot/api/leaderboard/',
+        request = self.factory.get(f'{API}/leaderboard/',
             {
                 'guild': self.guild["guild_id"],
                 'start_date': int(self.weekstart.timestamp()),
                 'end_date': int(self.nextweekstart.timestamp())
-            }, format='json')
+            }, 
+            format='json')
        
         force_authenticate(request, user=self.user)
         view = LeaderboardViewSet.as_view({'get': 'retrieve'})
@@ -303,3 +295,48 @@ class TestMatchAggregation(TestCase):
 
     # def test_stats_alltime(self):
     #     self.assertTrue(False)
+
+class TestDeckStats(SeekerTestCase):
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        cls.expected_matchups = -1
+        cls.expected_decks = -1
+
+        return super().setUpTestData()
+
+    def testDeckLeaderboard(self):
+        request = self.factory.get(f'{API}/decks/', 
+            {
+                'guild': test_guild['guild_id'],
+                'channel_id': test_channel,
+            },
+            format='json')
+
+        deck = 'testdeck'
+        force_authenticate(request, user=self.user)
+
+        view = DeckViewSet.as_view({'get': 'list'})
+        response = view(request)
+
+        self.assertEquals(response.status_code, 200)
+
+        self.assertEquals(len(response.data), self.expected_decks)
+
+    def testDeckStats(self):
+        request = self.factory.get(f'{API}/decks/', 
+            {
+                'guild': test_guild['guild_id'],
+                'channel_id': test_channel,
+            },
+            format='json')
+
+        deck = 'testdeck'
+        force_authenticate(request, user=self.user)
+
+        view = DeckViewSet.as_view({'get': 'retrieve'})
+        response = view(request, pk=deck)
+
+        self.assertEquals(response.status_code, 200)
+
+        self.assertEquals(len(response.data['matches']), self.expected_matchups)

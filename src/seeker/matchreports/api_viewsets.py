@@ -1,14 +1,9 @@
-from rest_framework import serializers, viewsets, permissions
+from rest_framework import viewsets, permissions
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
-
-import logging
-
 from . import views
 from . import models
-from .api_serializers import MatchSerializer, LeaderboardSerializer
-
-# logger = logging.getLogger(__name__)
+from .api_serializers import MatchSerializer, LeaderboardSerializer, get_leaderboard
 
 def setup_eager_loading(get_queryset):
     def decorator(self):
@@ -27,6 +22,37 @@ class MatchViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return models.Match.objects.all()
 
+class DeckViewSet(viewsets.ViewSet):
+    '''
+    Response data will look like
+    List:
+    [
+        {
+            'deck': 'name',
+            'games_played': 1,
+            'games_won': 0
+        }
+    ]
+
+    Retrieve:
+    {
+        'deck': 'name',
+        'matches': [
+            {
+                'deck': 'name',
+                'games_played': 0,
+                'games_won': 0
+            },
+            {
+                'deck': 'name',
+                'games_played': 1,
+                'games_won': 1
+            },
+        ]
+    }
+    '''
+    pass
+
 class LeaderboardViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
     filterset_fields = ['guild', 'channel_id']
@@ -38,12 +64,12 @@ class LeaderboardViewSet(viewsets.ViewSet):
         start_date = request.query_params.get('start_date')
         end_date = request.query_params.get('end_date')
         user = get_object_or_404(queryset, pk=pk)
-        serializer = LeaderboardSerializer(views.get_leaderboard(guild, start_date, end_date).filter(user_id=pk).first())
+        serializer = LeaderboardSerializer(get_leaderboard(guild, start_date, end_date).filter(user_id=pk).first())
         return Response(serializer.data)
 
     def list(self, request):
         guild = request.query_params.get('guild')
         start_date = request.query_params.get('start_date')
         end_date = request.query_params.get('end_date')
-        serializer = LeaderboardSerializer(views.get_leaderboard(guild, start_date, end_date), many=True)
+        serializer = LeaderboardSerializer(get_leaderboard(guild, start_date, end_date), many=True)
         return Response(serializer.data)
