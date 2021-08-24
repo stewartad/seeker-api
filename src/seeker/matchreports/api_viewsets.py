@@ -3,7 +3,7 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from . import views
 from . import models
-from .api_serializers import MatchSerializer, LeaderboardSerializer, get_leaderboard
+from .api_serializers import DeckLeaderboardSerializer, MatchSerializer, LeaderboardSerializer, get_deck_leaderboard, get_leaderboard
 
 def setup_eager_loading(get_queryset):
     def decorator(self):
@@ -23,35 +23,20 @@ class MatchViewSet(viewsets.ModelViewSet):
         return models.Match.objects.all()
 
 class DeckViewSet(viewsets.ViewSet):
-    '''
-    Response data will look like
-    List:
-    [
-        {
-            'deck': 'name',
-            'games_played': 1,
-            'games_won': 0
-        }
-    ]
+    permission_classes = [permissions.IsAuthenticated]
+    filterset_fields = ['guild', 'channel_id']
+    http_method_names = ['get', 'head']
 
-    Retrieve:
-    {
-        'deck': 'name',
-        'matches': [
-            {
-                'deck': 'name',
-                'games_played': 0,
-                'games_won': 0
-            },
-            {
-                'deck': 'name',
-                'games_played': 1,
-                'games_won': 1
-            },
-        ]
-    }
-    '''
-    pass
+    def list(self, request):
+        guild = request.query_params.get('guild')
+        channel = request.query_params.get('channel_id')
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        serializer = DeckLeaderboardSerializer(get_deck_leaderboard(guild, channel, start_date, end_date), many=True)
+        return Response(serializer.data)
+
+    def retrieve(self, request, pk=None):
+        pass
 
 class LeaderboardViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]

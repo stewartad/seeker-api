@@ -38,6 +38,40 @@ class SeekerTestCase(TestCase):
         cls.factory = APIRequestFactory()
         return super().setUpClass()
 
+    @classmethod
+    def _create_match(cls, guild, *users, date=None, channel_id=None, deck=True):
+        # creates a match report giving each user 1 win
+        # usually this means 2 games per match (i.e.) 1-1
+
+        match_request = {
+            'reports': [
+                {
+                    'user': user,                    
+                    'deck': f'deck{i}',
+                    'games': 1
+                } for i, user in enumerate(users)
+            ],
+            'channel_id': channel_id,
+            'guild': guild
+        }
+        if not deck:
+            for report in match_request['reports']:
+                report['deck'] = ''
+
+        request = cls.factory.post(f'{API}/matches/', match_request, format='json')
+        
+        force_authenticate(request, user=cls.user)
+
+        view = MatchViewSet.as_view({'get': 'list', 'post': 'create'})
+        response = view(request)
+        if response.status_code != 201:
+            raise Exception()
+
+        id = response.data['match_id']
+        if date is not None:
+            Match.objects.filter(match_id=id).update(date=int(date.timestamp()))
+
+
 
 # Create your tests here.
 class TestApiPost(SeekerTestCase):
@@ -112,66 +146,36 @@ class TestMatchAggregation(SeekerTestCase):
     @classmethod
     def setUpTestData(cls) -> None:
         # week
-        cls._create_match(cls.guild, cls.weekstart + timedelta(days=0), cls.user1, cls.user2)
-        cls._create_match(cls.guild, cls.weekstart + timedelta(days=0), cls.user1, cls.user3)
-        cls._create_match(cls.guild, cls.weekstart + timedelta(days=0), cls.user3, cls.user2)
+        cls._create_match(cls.guild, cls.user1, cls.user2, date=cls.weekstart + timedelta(days=0))
+        cls._create_match(cls.guild, cls.user1, cls.user3, date=cls.weekstart + timedelta(days=0))
+        cls._create_match(cls.guild, cls.user3, cls.user2, date=cls.weekstart + timedelta(days=0))
 
-        cls._create_match(cls.guild, cls.weekstart + timedelta(days=6), cls.user1, cls.user2)
-        cls._create_match(cls.guild, cls.weekstart + timedelta(days=6), cls.user1, cls.user3)
-        cls._create_match(cls.guild, cls.weekstart + timedelta(days=6), cls.user3, cls.user2)
+        cls._create_match(cls.guild, cls.user1, cls.user2, date=cls.weekstart + timedelta(days=6))
+        cls._create_match(cls.guild, cls.user1, cls.user3, date=cls.weekstart + timedelta(days=6))
+        cls._create_match(cls.guild, cls.user3, cls.user2, date=cls.weekstart + timedelta(days=6))
         
-        cls._create_match(cls.guild, cls.weekstart + timedelta(days=7), cls.user1, cls.user2)
-        cls._create_match(cls.guild, cls.weekstart + timedelta(days=7), cls.user1, cls.user3)
-        cls._create_match(cls.guild, cls.weekstart + timedelta(days=7), cls.user3, cls.user2)
+        cls._create_match(cls.guild, cls.user1, cls.user2, date=cls.weekstart + timedelta(days=7))
+        cls._create_match(cls.guild, cls.user1, cls.user3, date=cls.weekstart + timedelta(days=7))
+        cls._create_match(cls.guild, cls.user3, cls.user2, date=cls.weekstart + timedelta(days=7))
         
-        cls._create_match(cls.guild, cls.weekstart + timedelta(days=8), cls.user1, cls.user2)
-        cls._create_match(cls.guild, cls.weekstart + timedelta(days=8), cls.user1, cls.user3)
-        cls._create_match(cls.guild, cls.weekstart + timedelta(days=8), cls.user3, cls.user2)
+        cls._create_match(cls.guild, cls.user1, cls.user2, date=cls.weekstart + timedelta(days=8))
+        cls._create_match(cls.guild, cls.user1, cls.user3, date=cls.weekstart + timedelta(days=8))
+        cls._create_match(cls.guild, cls.user3, cls.user2, date=cls.weekstart + timedelta(days=8))
 
         # month
-        cls._create_match(cls.guild, cls.monthstart + timedelta(weeks=0), cls.user1, cls.user2)
-        cls._create_match(cls.guild, cls.monthstart + timedelta(weeks=0), cls.user1, cls.user3)
-        cls._create_match(cls.guild, cls.monthstart + timedelta(weeks=0), cls.user3, cls.user2)
+        cls._create_match(cls.guild, cls.user1, cls.user2, date=cls.monthstart + timedelta(weeks=0))
+        cls._create_match(cls.guild, cls.user1, cls.user3, date=cls.monthstart + timedelta(weeks=0))
+        cls._create_match(cls.guild, cls.user3, cls.user2, date=cls.monthstart + timedelta(weeks=0))
 
         # year
-        cls._create_match(cls.guild, cls.yearstart + timedelta(weeks=8), cls.user1, cls.user2)
-        cls._create_match(cls.guild, cls.yearstart + timedelta(weeks=8), cls.user1, cls.user3)
-        cls._create_match(cls.guild, cls.yearstart + timedelta(weeks=8), cls.user3, cls.user2)
+        cls._create_match(cls.guild, cls.user1, cls.user2, date=cls.yearstart + timedelta(weeks=8))
+        cls._create_match(cls.guild, cls.user1, cls.user3, date=cls.yearstart + timedelta(weeks=8))
+        cls._create_match(cls.guild, cls.user3, cls.user2, date=cls.yearstart + timedelta(weeks=8))
         # > year
 
         # for guild filtering
-        cls._create_match(cls.guild2, cls.weekstart + timedelta(hours=0), cls.user1, cls.user2)
-        cls._create_match(cls.guild2, cls.weekstart + timedelta(hours=1), cls.user1, cls.user2)
-
-    @classmethod
-    def _create_match(cls, guild, date=None, *users):
-        # creates a match report giving each user 1 win
-        # usually this means 2 games per match (i.e.) 1-1
-
-        match_request = {
-            'reports': [
-                {
-                    'user': user,                    
-                    'deck': f'deck{i}',
-                    'games': 1
-                } for i, user in enumerate(users)
-            ],
-            'channel_id': 200,
-            'guild': guild
-        }
-
-        request = cls.factory.post(f'{API}/matches/', match_request, format='json')
-        
-        force_authenticate(request, user=cls.user)
-
-        view = MatchViewSet.as_view({'get': 'list', 'post': 'create'})
-        response = view(request)
-        if response.status_code != 201:
-            raise Exception()
-
-        id = response.data['match_id']
-        if date is not None:
-            Match.objects.filter(match_id=id).update(date=int(date.timestamp()))
+        cls._create_match(cls.guild2, cls.user1, cls.user2, date=cls.weekstart + timedelta(hours=0))
+        cls._create_match(cls.guild2, cls.user1, cls.user2, date=cls.weekstart + timedelta(hours=1))
 
     def test_guild(self):
         request = self.factory.get(f'{API}/leaderboard',
@@ -300,12 +304,19 @@ class TestDeckStats(SeekerTestCase):
 
     @classmethod
     def setUpTestData(cls) -> None:
+        cls.guild = test_guild
         cls.expected_matchups = -1
-        cls.expected_decks = -1
+        cls.expected_decks = 2
+
+        cls._create_match(cls.guild, user_yequari, user_yeq2, channel_id=test_channel)
+        cls._create_match(cls.guild, user_yequari, user_yeq3, channel_id=test_channel)
+        
+        # should not be counted
+        cls._create_match(cls.guild, user_yequari, user_yeq3, channel_id=0)
 
         return super().setUpTestData()
 
-    def testDeckLeaderboard(self):
+    def test_deck_leaderboard(self):
         request = self.factory.get(f'{API}/decks/', 
             {
                 'guild': test_guild['guild_id'],
@@ -323,7 +334,24 @@ class TestDeckStats(SeekerTestCase):
 
         self.assertEquals(len(response.data), self.expected_decks)
 
-    def testDeckStats(self):
+    def test_no_channel_in_request(self):
+        request = self.factory.get(f'{API}/decks/', 
+            {
+                'guild': test_guild['guild_id']
+            },
+            format='json')
+
+        force_authenticate(request, user=self.user)
+
+        view = DeckViewSet.as_view({'get': 'list'})
+        response = view(request)
+
+        self.assertEquals(response.status_code, 200)
+
+        self.assertEquals(len(response.data), 0)
+
+
+    def test_deck_stats(self):
         request = self.factory.get(f'{API}/decks/', 
             {
                 'guild': test_guild['guild_id'],

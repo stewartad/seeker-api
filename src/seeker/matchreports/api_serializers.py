@@ -11,9 +11,8 @@ def get_leaderboard(guild_id=None, start_date=None, end_date=None):
     '''
     reports = models.Report.objects.all()
     if guild_id is not None:
-        guild = get_object_or_404(models.Guild.objects.all(), guild_id=guild_id)
-        reports = reports.filter(match__guild=guild)
-        users = models.User.objects.filter(reports__match__guild=guild)
+        reports = reports.filter(match__guild=guild_id)
+        users = models.User.objects.filter(reports__match__guild=guild_id)
     else:
         users = models.User.objects.all()
     
@@ -37,6 +36,32 @@ def get_leaderboard(guild_id=None, start_date=None, end_date=None):
         .annotate(total_games=Subquery(total_games)) \
         .distinct() \
         .order_by('-total_games', '-won_games', 'name')
+    return queryset
+
+
+def get_deck_leaderboard(guild_id, channel_id, start_date=None, end_date=None):
+    if channel_id is None:
+        return models.Report.objects.none()
+    reports = models.Report.objects.filter(match__guild=guild_id, match__channel_id=channel_id)
+    if start_date is not None:
+        reports = reports.filter(match__date__gte=start_date)
+    if end_date is not None:
+        reports = reports.filter(match__date__lt=end_date)
+
+    won_games = reports \
+        .values('deck') \
+        .annotate(won_games=Sum('games')) \
+        .values('won_games')
+    total_games = reports \
+        .values('deck') \
+        .annotate(total_games=Sum('match__reports__games')) \
+        .values('total_games')
+    queryset = reports \
+        .values('deck') \
+        .annotate(won_games=Subquery(won_games)) \
+        .annotate(total_games=Subquery(total_games)) \
+        .distinct() \
+        .order_by('-total_games', '-won_games', 'deck')
     return queryset
 
 
@@ -87,6 +112,57 @@ class LeaderboardSerializer(serializers.Serializer):
             'games_won': won_games,
             'winrate': winrate
         }
+
+
+class DeckLeaderboardSerializer(serializers.Serializer):
+    '''
+    [
+        {
+            'deck': 'name',
+            'games_played': 1,
+            'games_won': 0
+        }
+    ]
+    '''
+    def to_representation(self, instance):
+        won_games = instance.get('won_games')
+        total_games = instance.get('total_games')
+        if won_games is None:
+            won_games = 0
+        if total_games is None:
+            total_games = 0
+
+        winrate = won_games / total_games if total_games != 0 else 0
+        return {
+            'deck': instance.get('deck'),
+            'games_played': total_games,
+            'games_won': won_games,
+            'winrate': winrate
+        }
+
+
+class DeckStatSerializer(serializers.Serializer):
+    '''
+    {
+        'deck': 'name',
+        'matches': [
+            {
+                'deck': 'name',
+                'games_played': 0,
+                'games_won': 0
+            },
+            {
+                'deck': 'name',
+                'games_played': 1,
+                'games_won': 1
+            },
+        ]
+    }
+    '''
+    def to_representation(self, instance):
+        # TODO
+        return super().to_representation(instance)
+    
 
 
 class MatchSerializer(serializers.ModelSerializer):
