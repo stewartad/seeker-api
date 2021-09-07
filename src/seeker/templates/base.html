@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+    <title>{% block title %}yequari{% endblock %}</title>
+</head>
+
+<body>
+    <div class="flex-container">
+        <div id="sidebar">
+            {% block sidebar %}
+            <h1>@yequari</h1>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/seekerbot/">SeekerBot</a></li>
+            </ul>
+            {% endblock %}
+        </div>
+
+        <div id="content">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+</body>
+</html>
