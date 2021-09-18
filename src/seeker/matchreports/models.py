@@ -8,8 +8,8 @@
 from django.db import models
 
 class Guild(models.Model):
-    guild_id = models.IntegerField(primary_key=True)
-    name = models.TextField()
+    guild_id = models.CharField(primary_key=True, max_length=100)
+    name = models.CharField(max_length=100)
 
     class Meta:
         db_table = 'guilds'
@@ -20,8 +20,8 @@ class Guild(models.Model):
 
 class Match(models.Model):
     match_id = models.AutoField(primary_key=True)
-    date = models.IntegerField()
-    channel_id = models.IntegerField(blank=True, null=True)
+    date = models.DateTimeField()
+    channel_id = models.CharField(blank=True, null=True, max_length=100)
     guild = models.ForeignKey(Guild, on_delete=models.CASCADE)
 
     class Meta:
@@ -33,8 +33,8 @@ class Match(models.Model):
         return ' '.join([f'{report.user} {report.games}' for report in reports])
 
 class User(models.Model):
-    user_id = models.IntegerField(primary_key=True, blank=True, null=False)
-    name = models.TextField(blank=True, null=True)  # This field type is a guess.
+    user_id = models.CharField(primary_key=True, blank=True, null=False, max_length=100)
+    name = models.CharField(blank=True, null=True, max_length=100) 
 
     class Meta:
         db_table = 'users'
@@ -48,7 +48,7 @@ class Report(models.Model):
     user = models.ForeignKey(User, models.CASCADE, related_name='reports')
     match = models.ForeignKey(Match, models.CASCADE, related_name='reports')
     games = models.IntegerField()
-    deck = models.TextField(blank=True, null=True)
+    deck = models.CharField(blank=True, null=True, max_length=100)
 
     class Meta:
         db_table = 'reports'
