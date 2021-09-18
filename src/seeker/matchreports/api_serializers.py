@@ -1,5 +1,6 @@
 from django.db.models.aggregates import Sum
-from django.db.models.expressions import OuterRef, Subquery
+from django.db.models.expressions import F, OuterRef, Subquery
+from django.db.models.query_utils import Q
 from django.shortcuts import get_object_or_404
 from . import models
 from rest_framework import serializers
@@ -63,6 +64,35 @@ def get_deck_leaderboard(guild_id, channel_id, start_date=None, end_date=None):
         .distinct() \
         .order_by('-total_games', '-won_games', 'deck')
     return queryset
+
+def get_deck_stats(guild_id, channel_id, deck, start_date=None, end_date=None):
+    if channel_id is None:
+        return models.Report.objects.none()
+
+    matches = models.Match.objects.filter(guild=guild_id, channel_id=channel_id, reports__deck=deck)
+    if start_date is not None:
+        matches = matches.filter(date__gte=start_date)
+    if end_date is not None:
+        matches = matches.filter(date__lt=end_date)
+
+    reports = models.Report.objects.filter(deck=deck, match__match_id__in=matches)
+    other_reports = models.Report.objects.filter(match__in=matches).exclude(report_id=OuterRef('report_id')).values('deck')
+
+    reports = reports.annotate(other_deck=Subquery(other_reports))
+
+    # reports = reports.values('deck') \
+    #     .annotate(other_deck=Subquery(other_reports)) \
+    #     .annotate(total_games=Sum('match__reports__games')) \
+    #     .distinct() \
+    #     .annotate(won_games=Sum('games')) 
+        
+        # .distinct()
+    
+    import pdb; pdb.set_trace()
+
+    queryset = None
+    return queryset
+
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -183,7 +213,7 @@ class MatchSerializer(serializers.ModelSerializer):
             defaults={'name': guild_data.get('name')}
         )
         match = models.Match.objects.create(
-            date = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp()),
+            date = datetime.utcnow().replace(tzinfo=timezone.utc),
             channel_id = validated_data.get('channel_id'),
             guild = guild
         )

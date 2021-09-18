@@ -359,7 +359,7 @@ class TestDeckStats(SeekerTestCase):
             },
             format='json')
 
-        deck = 'testdeck'
+        deck = 'deck1'
         force_authenticate(request, user=self.user)
 
         view = DeckViewSet.as_view({'get': 'retrieve'})

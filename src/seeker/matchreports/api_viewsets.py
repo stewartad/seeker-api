@@ -3,7 +3,7 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from . import views
 from . import models
-from .api_serializers import DeckLeaderboardSerializer, MatchSerializer, LeaderboardSerializer, get_deck_leaderboard, get_leaderboard
+from .api_serializers import DeckLeaderboardSerializer, MatchSerializer, LeaderboardSerializer, get_deck_leaderboard, get_deck_stats, get_leaderboard
 
 def setup_eager_loading(get_queryset):
     def decorator(self):
@@ -36,7 +36,12 @@ class DeckViewSet(viewsets.ViewSet):
         return Response(serializer.data)
 
     def retrieve(self, request, pk=None):
-        pass
+        guild = request.query_params.get('guild')
+        channel = request.query_params.get('channel_id')
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        # serializer = LeaderboardSerializer(get_deck_stats(guild, channel, pk, start_date, end_date))
+        return Response(None)
 
 class LeaderboardViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
