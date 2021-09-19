@@ -42,17 +42,20 @@ def get_leaderboard(guild_id=None, start_date=None, end_date=None):
 def get_deck_leaderboard(guild_id, channel_id, start_date=None, end_date=None):
     if channel_id is None:
         return models.Report.objects.none()
-    reports = models.Report.objects.filter(match__guild=guild_id, match__channel_id=channel_id)
+    reports = models.Report.objects.filter(match__guild=guild_id, match__channel_id=channel_id) \
+        .exclude(deck__isnull=True).exclude(deck__exact='')
     if start_date is not None:
         reports = reports.filter(match__date__gte=start_date)
     if end_date is not None:
         reports = reports.filter(match__date__lt=end_date)
 
     won_games = reports \
+        .filter(deck=OuterRef('deck')) \
         .values('deck') \
         .annotate(won_games=Sum('games')) \
         .values('won_games')
     total_games = reports \
+        .filter(deck=OuterRef('deck')) \
         .values('deck') \
         .annotate(total_games=Sum('match__reports__games')) \
         .values('total_games')
