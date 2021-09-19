@@ -34,7 +34,6 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'matchreports.apps.MatchreportsConfig',
-    'carddb.apps.CarddbConfig',
     'home.apps.HomeConfig',
     'rest_framework',
     'django_filters',
