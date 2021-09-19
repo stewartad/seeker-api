@@ -143,6 +143,8 @@ STATICFILES_DIRS = [
     "static"
 ]
 
+STATIC_ROOT = '/var/www/yequari.com/static'
+
 # rest_framework permissions
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
