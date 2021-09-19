@@ -183,7 +183,7 @@ class MatchSerializer(serializers.ModelSerializer):
             defaults={'name': guild_data.get('name')}
         )
         match = models.Match.objects.create(
-            date = int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp()),
+            date = datetime.utcnow().replace(tzinfo=timezone.utc),
             channel_id = validated_data.get('channel_id'),
             guild = guild
         )
