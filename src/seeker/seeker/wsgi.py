@@ -9,9 +9,9 @@ https://docs.djangoproject.com/en/2.2/howto/deployment/wsgi/
 
 import os, sys
 
-sys.path.append('/var/www/yequari.com/seeker-api/src/seeker')
+sys.path.append('/home/adstew/seeker-api/src/seeker')
 
-sys.path.append('/var/www/yequari.com/seeker-api/.venv/lib/python3.8/site-packages')
+sys.path.append('/home/adstew/seeker-api/.venv/lib/python3.8/site-packages')
 
 from django.core.wsgi import get_wsgi_application
 

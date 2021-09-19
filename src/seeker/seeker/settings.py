@@ -28,7 +28,7 @@ SECRET_KEY = os.environ['SECRET_KEY']
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['.yequari.com']
+ALLOWED_HOSTS = ['.yequari.com', '143.198.101.203']
 
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
