@@ -14,9 +14,9 @@ def setup_eager_loading(get_queryset):
 
 class MatchViewSet(viewsets.ModelViewSet):
     serializer_class = MatchSerializer
-    filterset_fields = ['guild', 'channel_id', 'reports__user']
+    filterset_fields = ['guild', 'channel_id', 'reports__user', 'date']
     permission_classes = [permissions.IsAuthenticated]
-    http_method_names = ['get', 'post', 'head']
+    http_method_names = ['get', 'post', 'head', 'delete']
 
     @setup_eager_loading
     def get_queryset(self):

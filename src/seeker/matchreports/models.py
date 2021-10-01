@@ -45,8 +45,8 @@ class User(models.Model):
 
 class Report(models.Model):
     report_id = models.AutoField(primary_key=True)
-    user = models.ForeignKey(User, models.CASCADE, related_name='reports')
-    match = models.ForeignKey(Match, models.CASCADE, related_name='reports')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reports')
+    match = models.ForeignKey(Match, on_delete=models.CASCADE, related_name='reports')
     games = models.IntegerField()
     deck = models.CharField(blank=True, null=True, max_length=100)
 
