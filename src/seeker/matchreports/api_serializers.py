@@ -5,39 +5,6 @@ from . import models
 from rest_framework import serializers
 from datetime import datetime, timezone
 
-def get_leaderboard(guild_id=None, start_date=None, end_date=None):
-    '''
-    Utility function for generating a leaderboard
-    '''
-    reports = models.Report.objects.all()
-    if guild_id is not None:
-        reports = reports.filter(match__guild=guild_id)
-        users = models.User.objects.filter(reports__match__guild=guild_id)
-    else:
-        users = models.User.objects.all()
-    
-    if start_date is not None:
-        reports = reports.filter(match__date__gte=start_date)
-    if end_date is not None:
-        reports = reports.filter(match__date__lt=end_date)
-
-    reports = reports.filter(user=OuterRef('user_id'))
-
-    won_games = reports \
-        .values('user_id') \
-        .annotate(won_games=Sum('games')) \
-        .values('won_games')
-    total_games = reports \
-        .values('user_id') \
-        .annotate(total_games=Sum('match__reports__games')) \
-        .values('total_games')
-    queryset = users \
-        .annotate(won_games=Subquery(won_games)) \
-        .annotate(total_games=Subquery(total_games)) \
-        .distinct() \
-        .order_by('-total_games', '-won_games', 'name')
-    return queryset
-
 
 def get_deck_leaderboard(guild_id, channel_id, start_date=None, end_date=None):
     if channel_id is None:

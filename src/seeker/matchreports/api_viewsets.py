@@ -1,9 +1,13 @@
-from rest_framework import viewsets, permissions
+from django.db.models import query
+from django.db.models.aggregates import Sum
+from django.db.models.expressions import OuterRef, Subquery
+from rest_framework import serializers, viewsets, permissions
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
+from rest_framework.decorators import action
 from . import views
 from . import models
-from .api_serializers import DeckLeaderboardSerializer, MatchSerializer, LeaderboardSerializer, get_deck_leaderboard, get_leaderboard
+from .api_serializers import DeckLeaderboardSerializer, MatchSerializer, LeaderboardSerializer, UserSerializer, get_deck_leaderboard
 
 def setup_eager_loading(get_queryset):
     def decorator(self):
@@ -14,13 +18,27 @@ def setup_eager_loading(get_queryset):
 
 class MatchViewSet(viewsets.ModelViewSet):
     serializer_class = MatchSerializer
-    filterset_fields = ['guild', 'channel_id', 'reports__user', 'date']
+    filterset_fields = ['guild', 'channel_id']
     permission_classes = [permissions.IsAuthenticated]
     http_method_names = ['get', 'post', 'head', 'delete']
 
     @setup_eager_loading
     def get_queryset(self):
-        return models.Match.objects.all()
+        queryset = models.Match.objects.all()
+
+        start_date = self.request.query_params.get('start_date')
+        end_date = self.request.query_params.get('end_date')
+        player = self.request.query_params.get('player')
+
+        if start_date is not None:
+            queryset = queryset.filter(date__gte=start_date)
+        if end_date is not None:
+            queryset = queryset.filter(date__lt=end_date)
+        if player is not None:
+            queryset = queryset.filter(reports__user=player)
+        
+        return queryset
+
 
 class DeckViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
@@ -38,23 +56,54 @@ class DeckViewSet(viewsets.ViewSet):
     def retrieve(self, request, pk=None):
         pass
 
+
 class LeaderboardViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
-    filterset_fields = ['guild', 'channel_id']
     http_method_names = ['get', 'head']
 
+    def get_queryset(self):
+        queryset = models.Match.objects.all()
+
+        start_date = self.request.query_params.get('start_date')
+        end_date = self.request.query_params.get('end_date')
+        guild = self.request.query_params.get('guild_id')
+        channel = self.request.query_params.get('channel_id')
+
+        if start_date is not None:
+            queryset = queryset.filter(date__gte=start_date)
+        if end_date is not None:
+            queryset = queryset.filter(date__lt=end_date)
+        if guild is not None:
+            queryset = queryset.filter(guild=guild)
+        if channel is not None:
+            queryset = queryset.filter(channel_id=channel)
+        
+        return queryset
+
+    def _get_user_stats(self):
+        matches = self.get_queryset()
+        reports = models.Report.objects.filter(match__in=matches)
+        users = models.User.objects.filter(reports__match__in=matches)
+
+        reports = reports.filter(user=OuterRef('user_id'))
+        won_games = reports \
+            .values('user_id') \
+            .annotate(won_games=Sum('games')) \
+            .values('won_games')
+        total_games = reports \
+            .values('user_id') \
+            .annotate(total_games=Sum('match__reports__games')) \
+            .values('total_games')
+        return users \
+            .annotate(won_games=Subquery(won_games)) \
+            .annotate(total_games=Subquery(total_games)) \
+            .distinct() \
+            .order_by('-total_games', '-won_games', 'name')
+
     def retrieve(self, request, pk=None):
-        queryset = models.User.objects.all()
-        guild = request.query_params.get('guild')
-        start_date = request.query_params.get('start_date')
-        end_date = request.query_params.get('end_date')
-        user = get_object_or_404(queryset, pk=pk)
-        serializer = LeaderboardSerializer(get_leaderboard(guild, start_date, end_date).filter(user_id=pk).first())
+        serializer = LeaderboardSerializer(self._get_user_stats().filter(user_id=pk).first())
         return Response(serializer.data)
 
     def list(self, request):
-        guild = request.query_params.get('guild')
-        start_date = request.query_params.get('start_date')
-        end_date = request.query_params.get('end_date')
-        serializer = LeaderboardSerializer(get_leaderboard(guild, start_date, end_date), many=True)
+        serializer = LeaderboardSerializer(self._get_user_stats(), many=True)
         return Response(serializer.data)
