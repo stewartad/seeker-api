@@ -1,0 +1,14 @@
+version: '3.3'
+
+services:
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    container_name: django_web
+    extra_hosts:
+      - "database:192.168.1.16"
+    volumes:
+      - ./src/seeker:/app
+    ports:
+      - "8000:8000"
+
