@@ -20,7 +20,7 @@ def setup_eager_loading(get_queryset):
 
 class MatchViewSet(viewsets.ModelViewSet):
     serializer_class = MatchSerializer
-    filterset_fields = ['guild', 'channel_id']
+    filterset_fields = ['guild', 'channel_id', 'reports__user']
     permission_classes = [permissions.IsAuthenticated]
     http_method_names = ['get', 'post', 'head', 'delete']
 
@@ -30,16 +30,13 @@ class MatchViewSet(viewsets.ModelViewSet):
 
         start_date = self.request.query_params.get('start_date')
         end_date = self.request.query_params.get('end_date')
-        players = self.request.query_params.get('user')
 
         if start_date is not None:
             date = datetime.fromtimestamp(int(start_date))
-            queryset = queryset.filter(date__gte=date)
+            queryset = queryset.filter(date__gte=timezone.make_aware(date, timezone.utc))
         if end_date is not None:
             date = datetime.fromtimestamp(int(end_date))
-            queryset = queryset.filter(date__lt=date)
-        if players is not None:
-            queryset = queryset.filter(reports__user=players)
+            queryset = queryset.filter(date__lt=timezone.make_aware(date, timezone.utc))
         
         return queryset.order_by('-date')
 

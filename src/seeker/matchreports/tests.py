@@ -1,5 +1,6 @@
 from django import test
 from django.test import TestCase
+from django.utils.safestring import mark_safe
 from rest_framework.test import APIRequestFactory, force_authenticate
 from datetime import datetime, timedelta
 from django.contrib.auth.models import User as DjangoUser
@@ -76,9 +77,10 @@ class SeekerTestCase(TestCase):
         id = response.data['match_id']
         if date is not None:
             Match.objects.filter(match_id=id).update(date=date)
+        return response.data
 
     @classmethod
-    def _get_matches(cls, user=None, guild_id=None, channel_id=None, start_date=None, end_date=None):
+    def _get_matches(cls, player=None, guild_id=None, channel_id=None, start_date=None, end_date=None):
         params = {}
         if guild_id is not None:
             params['guild'] = guild_id
@@ -88,18 +90,15 @@ class SeekerTestCase(TestCase):
             params['start_date'] = int(start_date.timestamp())
         if end_date is not None:
             params['end_date'] = int(end_date.timestamp())
-        if user is not None:
-            params['user'] = user['user_id']
-
-        
+        if player is not None:
+            params['reports__user'] = player['user_id']
 
         request = cls.factory.get(f'{API}/matches',
-            params, 
+            params,
             format='json')
 
         force_authenticate(request, user=cls.user)
-        view = LeaderboardViewSet.as_view({'get': 'list'})
-        import pdb; pdb.set_trace()
+        view = MatchViewSet.as_view({'get': 'list'})
         return view(request)
 
     @classmethod
@@ -122,6 +121,15 @@ class SeekerTestCase(TestCase):
         force_authenticate(request, user=cls.user)
         view = LeaderboardViewSet.as_view({'get': 'list'})
         return view(request)
+
+    @classmethod
+    def _delete_match(cls, match_id):
+        request = cls.factory.delete(f'{API}/matches/{match_id}', format='json')
+
+        force_authenticate(request, user=cls.user)
+        
+        view = MatchViewSet.as_view({'get': 'list', 'post': 'create', 'delete': 'destroy'})
+        return view(request, pk=match_id)
 
 # Create your tests here.
 class TestAPIMethods(SeekerTestCase):
@@ -160,17 +168,22 @@ class TestAPIMethods(SeekerTestCase):
         self.assertEqual(response.status_code, 201)
 
     def test_match_delete(self):
-        latest_match = self._create_match(test_guild, user_yequari, user_yeq2)
-        # second_match = self._create_match(test_guild, user_yequari, user_yeq2)
+        first_match = self._create_match(test_guild, user_yequari, user_yeq2)
+        second_match = self._create_match(test_guild, user_yequari, user_yeq2)
+        irrelevant_match = self._create_match(test_guild, user_yeq2, user_yeq3)
 
-        now = timezone.now()
-        prev_hour = now - timedelta(hours=1)
+        now = timezone.now() + timedelta(minutes=1)
+        prev_hour = now - timedelta(hours=1, minutes=1)
 
-        most_recent_matches = self._get_matches(user_yequari, guild_id=test_guild['guild_id'], start_date=prev_hour, end_date=now)
-        # import pdb; pdb.set_trace()
-        self.assertEqual(len(most_recent_matches.data), 2)
+        most_recent_matches = self._get_matches(player=user_yequari, guild_id=test_guild['guild_id'], start_date=prev_hour, end_date=now).data
+        self.assertEqual(len(most_recent_matches), 2)
+        self.assertEqual(second_match['match_id'], most_recent_matches[0]['match_id'])
 
+        deletion_response = self._delete_match(most_recent_matches[0]['match_id'])
+        self.assertTrue(deletion_response.status_code >= 200 and deletion_response.status_code < 300)
 
+        most_recent_matches = self._get_matches(player=user_yequari, guild_id=test_guild['guild_id'], start_date=prev_hour, end_date=now).data
+        self.assertEqual(len(most_recent_matches), 1)
 
 class TestMatchAggregation(SeekerTestCase):
     
