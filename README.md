@@ -1,15 +1,16 @@
 # Seeker-API
 
-Webservice providing REST API for SeekerBot
+Webservice providing REST API for SeekerBot built on Django and Django REST Framework
 
 ## TODO
 - [ ] Data migration
 - [ ] Users and authentication
+    - Discord oauth for website access
 - [ ] Undo commands
     - Proper cascading match deletion
 - [ ] Per-deck stats
 - [x] Time filter for leaderboard/stats
-    - Time conversions done by SeekerBot, time filtering will be done using GMT as stored in the database
+    - Timezone conversions done by SeekerBot, time filtering will be done using GMT as stored in the database
 
 ## API Request JSON
 
