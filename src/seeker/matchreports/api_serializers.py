@@ -12,9 +12,11 @@ def get_deck_leaderboard(guild_id, channel_id, start_date=None, end_date=None):
     reports = models.Report.objects.filter(match__guild=guild_id, match__channel_id=channel_id) \
         .exclude(deck__isnull=True).exclude(deck__exact='')
     if start_date is not None:
-        reports = reports.filter(match__date__gte=start_date)
+        date = datetime.fromtimestamp(int(start_date))
+        reports = reports.filter(match__date__gte=date)
     if end_date is not None:
-        reports = reports.filter(match__date__lt=end_date)
+        date = datetime.fromtimestamp(int(end_date))
+        reports = reports.filter(match__date__lt=date)
 
     won_games = reports \
         .filter(deck=OuterRef('deck')) \

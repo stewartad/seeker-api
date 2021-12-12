@@ -1,6 +1,8 @@
+from datetime import datetime
 from django.db.models import query
 from django.db.models.aggregates import Sum
 from django.db.models.expressions import OuterRef, Subquery
+from django.utils import timezone
 from rest_framework import serializers, viewsets, permissions
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
@@ -28,16 +30,18 @@ class MatchViewSet(viewsets.ModelViewSet):
 
         start_date = self.request.query_params.get('start_date')
         end_date = self.request.query_params.get('end_date')
-        player = self.request.query_params.get('player')
+        players = self.request.query_params.get('user')
 
         if start_date is not None:
-            queryset = queryset.filter(date__gte=start_date)
+            date = datetime.fromtimestamp(int(start_date))
+            queryset = queryset.filter(date__gte=date)
         if end_date is not None:
-            queryset = queryset.filter(date__lt=end_date)
-        if player is not None:
-            queryset = queryset.filter(reports__user=player)
+            date = datetime.fromtimestamp(int(end_date))
+            queryset = queryset.filter(date__lt=date)
+        if players is not None:
+            queryset = queryset.filter(reports__user=players)
         
-        return queryset
+        return queryset.order_by('-date')
 
 
 class DeckViewSet(viewsets.ViewSet):
@@ -66,13 +70,15 @@ class LeaderboardViewSet(viewsets.ViewSet):
 
         start_date = self.request.query_params.get('start_date')
         end_date = self.request.query_params.get('end_date')
-        guild = self.request.query_params.get('guild_id')
+        guild = self.request.query_params.get('guild')
         channel = self.request.query_params.get('channel_id')
 
         if start_date is not None:
-            queryset = queryset.filter(date__gte=start_date)
+            date = timezone.make_aware(datetime.fromtimestamp(int(start_date)), timezone.utc)
+            queryset = queryset.filter(date__gte=date)
         if end_date is not None:
-            queryset = queryset.filter(date__lt=end_date)
+            date = timezone.make_aware(datetime.fromtimestamp(int(end_date)), timezone.utc)
+            queryset = queryset.filter(date__lt=date)
         if guild is not None:
             queryset = queryset.filter(guild=guild)
         if channel is not None:
