@@ -2,13 +2,39 @@ version: '3.3'
 
 services:
   web:
-    build: .
-    command: python manage.py runserver 0.0.0.0:8000
+    build: 
+      context: src/seeker
+      dockerfile: Dockerfile-dev
+    entrypoint: ["/app/wait.sh"]
     container_name: django_web
-    extra_hosts:
-      - "database:192.168.1.16"
+    links:
+      - db:db
     volumes:
       - ./src/seeker:/app
     ports:
       - "8000:8000"
+  db:
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'seeker'
+      MYSQL_PASSWORD: 'seeker123'
+      MYSQL_ROOT_PASSWORD: 'password'
+    ports:
+      - '30000:3306'
+    expose:
+      - '3306'
+    volumes:
+      - my-db:/var/lib/mysql
+  seekerbot:
+    build:
+      context: src/seekerbot
+      dockerfile: Dockerfile-dev
+    container_name: seekerbot
+    environment:
+      - API_HOST=http://web:8000
+    links:
+      - web:web
+volumes:
+  my-db:
 

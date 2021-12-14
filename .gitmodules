@@ -1,0 +1,3 @@
+[submodule "src/seekerbot"]
+	path = src/seekerbot
+	url = git@github.com:stewartad/seekerbot.git
