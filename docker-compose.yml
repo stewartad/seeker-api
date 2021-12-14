@@ -5,10 +5,16 @@ services:
     build: 
       context: src/seeker
       dockerfile: Dockerfile-dev
-    entrypoint: ["/app/wait.sh"]
     container_name: django_web
+    command: python manage.py runserver 0.0.0.0:8000
+    env_file:
+      - seekerapi.env
+    environment:
+      - DJANGO_SETTINGS_MODULE=seeker.test_settings
     links:
       - db:db
+    depends_on:
+      - db
     volumes:
       - ./src/seeker:/app
     ports:
@@ -16,10 +22,8 @@ services:
   db:
     image: mysql:5.7
     restart: always
-    environment:
-      MYSQL_DATABASE: 'seeker'
-      MYSQL_PASSWORD: 'seeker123'
-      MYSQL_ROOT_PASSWORD: 'password'
+    env_file:
+      - db.env
     ports:
       - '30000:3306'
     expose:
@@ -31,10 +35,12 @@ services:
       context: src/seekerbot
       dockerfile: Dockerfile-dev
     container_name: seekerbot
-    environment:
-      - API_HOST=http://web:8000
+    env_file:
+      - seekerbot.env
     links:
       - web:web
+    depends_on:
+      - web
 volumes:
   my-db:
 

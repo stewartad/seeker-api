@@ -1,14 +1,8 @@
 # For more information, please refer to https://aka.ms/vscode-docker-python
-FROM python:3.8-slim-buster
+FROM python:3.8-buster
 
 WORKDIR /app
 COPY requirements.txt .
 COPY . /app
 
-
-ENV DJANGO_SETTINGS_MODULE=seeker.test_settings
-
-RUN apt update && \
-    apt install -y netcat-openbsd && \
-    rm -rf /var/lib/apt/lists/* && \
-    python -m pip install -r requirements.txt
+RUN python -m pip install -r requirements.txt

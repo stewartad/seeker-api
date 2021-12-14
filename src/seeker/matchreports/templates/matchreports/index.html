@@ -4,6 +4,7 @@
 
 {% block content %}
 {% if latest_match_list %}
+    <h2>Latest matches</h2>
     <ul>
     {% for match in latest_match_list %}
         <li><a href="{% url 'detail' match.match_id %}">{{ match }}</a></li>
