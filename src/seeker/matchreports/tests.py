@@ -12,7 +12,7 @@ warnings.filterwarnings(
 )
 
 from .models import *
-from .api_viewsets import DeckViewSet, LeaderboardViewSet, MatchViewSet
+from .api_viewsets import DeckViewSet, LeaderboardView, MatchViewSet
 
 user_yequari = {
     'user_id': 236379624727248897,
@@ -119,7 +119,7 @@ class SeekerTestCase(TestCase):
             format='json')
         
         force_authenticate(request, user=cls.user)
-        view = LeaderboardViewSet.as_view({'get': 'list'})
+        view = LeaderboardView.as_view()
         return view(request)
 
     @classmethod
@@ -312,7 +312,7 @@ class TestMatchAggregation(SeekerTestCase):
             format='json')
        
         force_authenticate(request, user=self.user)
-        view = LeaderboardViewSet.as_view({'get': 'retrieve'})
+        view = LeaderboardView.as_view()
         # import pdb; pdb.set_trace()
         response = view(request, pk=user_yequari['user_id'])
         

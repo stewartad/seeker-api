@@ -69,7 +69,6 @@ class GuildSerializer(serializers.ModelSerializer):
 
 class LeaderboardSerializer(serializers.Serializer):
     def to_representation(self, instance):
-        won_games = instance.won_games
         total_games = instance.total_games
         if won_games is None:
             won_games = 0

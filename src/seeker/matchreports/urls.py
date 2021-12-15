@@ -6,11 +6,12 @@ from . import api_viewsets as api
 
 router = routers.SimpleRouter()
 router.register(r'matches', api.MatchViewSet, 'match')
-router.register(r'leaderboard', api.LeaderboardViewSet, 'leaderboard')
 router.register(r'decks', api.DeckViewSet, 'decks')
 
 urlpatterns = [
     path('', views.index, name='index'),
+    path('api/leaderboard', api.LeaderboardView.as_view()),
+    path('api/stats', api.StatsView.as_view()),
     path('api/', include(router.urls)),
-    path('<int:match_id>/', views.detail, name='detail'),
+    path('<int:match_id>/', views.detail, name='detail')
 ]

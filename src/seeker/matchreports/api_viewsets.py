@@ -3,11 +3,10 @@ from django.db.models import query
 from django.db.models.aggregates import Sum
 from django.db.models.expressions import OuterRef, Subquery
 from django.utils import timezone
-from rest_framework import serializers, viewsets, permissions
+from rest_framework import mixins, views, viewsets, permissions
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from . import views
 from . import models
 from .api_serializers import DeckLeaderboardSerializer, MatchSerializer, LeaderboardSerializer, UserSerializer, get_deck_leaderboard
 
@@ -58,55 +57,45 @@ class DeckViewSet(viewsets.ViewSet):
         pass
 
 
-class LeaderboardViewSet(viewsets.ViewSet):
+class UserViewSet(viewsets.ModelViewSet):
+    serializer_class = UserSerializer
+    filterset_fields = []
     permission_classes = [permissions.IsAuthenticated]
-    http_method_names = ['get', 'head']
-
-    def get_queryset(self):
-        queryset = models.Match.objects.all()
-
-        start_date = self.request.query_params.get('start_date')
-        end_date = self.request.query_params.get('end_date')
-        guild = self.request.query_params.get('guild')
-        channel = self.request.query_params.get('channel_id')
-
-        if start_date is not None:
-            date = timezone.make_aware(datetime.fromtimestamp(int(start_date)), timezone.utc)
-            queryset = queryset.filter(date__gte=date)
-        if end_date is not None:
-            date = timezone.make_aware(datetime.fromtimestamp(int(end_date)), timezone.utc)
-            queryset = queryset.filter(date__lt=date)
-        if guild is not None:
-            queryset = queryset.filter(guild=guild)
-        if channel is not None:
-            queryset = queryset.filter(channel_id=channel)
-        
-        return queryset
-
-    def _get_user_stats(self):
-        matches = self.get_queryset()
-        reports = models.Report.objects.filter(match__in=matches)
-        users = models.User.objects.filter(reports__match__in=matches)
-
-        reports = reports.filter(user=OuterRef('user_id'))
-        won_games = reports \
-            .values('user_id') \
-            .annotate(won_games=Sum('games')) \
-            .values('won_games')
-        total_games = reports \
-            .values('user_id') \
-            .annotate(total_games=Sum('match__reports__games')) \
-            .values('total_games')
-        return users \
-            .annotate(won_games=Subquery(won_games)) \
-            .annotate(total_games=Subquery(total_games)) \
-            .distinct() \
-            .order_by('-total_games', '-won_games', 'name')
+    http_method_names = ['get', 'list', 'head']
 
     def retrieve(self, request, pk=None):
         serializer = LeaderboardSerializer(self._get_user_stats().filter(user_id=pk).first())
         return Response(serializer.data)
 
-    def list(self, request):
-        serializer = LeaderboardSerializer(self._get_user_stats(), many=True)
-        return Response(serializer.data)
+
+class StatsView(views.APIView):
+    pass
+
+
+class LeaderboardView(views.APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, format=None):
+
+        params = {
+            'start_date': request.query_params.get('start_date'),
+            'end_date': request.query_params.get('end_date'),
+            'guild_id': request.query_params.get('guild'),
+            'channel_id': request.query_params.get('channel_id')
+        }
+
+        leaderboard = []
+        for user in models.User.objects.all():
+            won, played = user.get_stats(**params)
+            if won and played:
+                winrate = won / played if played != 0 else 0
+                user_entry = {
+                    'user_id': user.user_id,
+                    'name': user.name,
+                    'games_played': played,
+                    'games_won': won,
+                    'winrate': winrate
+                }
+                leaderboard.append(user_entry)
+
+        return Response(leaderboard)
