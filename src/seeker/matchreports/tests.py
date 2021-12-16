@@ -12,7 +12,7 @@ warnings.filterwarnings(
 )
 
 from .models import *
-from .api_viewsets import DeckViewSet, LeaderboardView, MatchViewSet
+from .api_viewsets import DeckViewSet, LeaderboardView, MatchViewSet, UserViewSet
 
 user_yequari = {
     'user_id': 236379624727248897,
@@ -259,6 +259,7 @@ class TestMatchAggregation(SeekerTestCase):
         self.assertEquals(len(response.data), 2)
         for entry in response.data:
             self.assertEquals(entry.get('games_played'), 4)
+            self.assertEquals(entry.get('games_won'), 2)
 
     def test_leaderboard_weekly(self):
         response = self._get_leaderboard(guild_id=self.guild["guild_id"], start_date=self.weekstart, end_date=self.nextweekstart)
@@ -270,6 +271,7 @@ class TestMatchAggregation(SeekerTestCase):
         # assert correct number of games played
         for entry in response.data:
             self.assertEquals(entry.get('games_played'), self.expected_weekly)
+            self.assertEquals(entry.get('games_won'), self.expected_weekly / 2)
 
     def test_leaderboard_monthly(self):
         response = self._get_leaderboard(guild_id=self.guild["guild_id"], start_date=self.monthstart, end_date=self.nextmonthstart)
@@ -280,6 +282,7 @@ class TestMatchAggregation(SeekerTestCase):
         # assert correct number of games played
         for entry in response.data:
             self.assertEquals(entry.get('games_played'), self.expected_monthly)
+            self.assertEquals(entry.get('games_won'), self.expected_monthly / 2)
 
     def test_leaderboard_yearly(self):
         response = self._get_leaderboard(guild_id=self.guild["guild_id"], start_date=self.yearstart, end_date=self.nextyearstart)
@@ -290,6 +293,7 @@ class TestMatchAggregation(SeekerTestCase):
         # assert correct number of games played
         for entry in response.data:
             self.assertEquals(entry.get('games_played'), self.expected_yearly)
+            self.assertEquals(entry.get('games_won'), self.expected_yearly / 2)
 
     def test_leaderboard_alltime(self):
         response = self._get_leaderboard(guild_id=self.guild["guild_id"])
@@ -300,21 +304,16 @@ class TestMatchAggregation(SeekerTestCase):
         # assert correct number of games played
         for entry in response.data:
             self.assertEquals(entry.get('games_played'), self.expected_all)
+            self.assertEquals(entry.get('games_won'), self.expected_all / 2)
 
     def test_stats_weekly(self):
         # TODO: stats testing
-        request = self.factory.get(f'{API}/leaderboard/',
-            {
-                'guild': self.guild["guild_id"],
-                'start_date': int(self.weekstart.timestamp()),
-                'end_date': int(self.nextweekstart.timestamp())
-            }, 
-            format='json')
+        request = self.factory.get(f'{API}/users', format='json')
        
         force_authenticate(request, user=self.user)
-        view = LeaderboardView.as_view()
+        view = UserViewSet.as_view({'get': 'retrieve'})
         # import pdb; pdb.set_trace()
-        response = view(request, pk=user_yequari['user_id'])
+        response = view(request, pk=self.user1['user_id'])
         
         # assert request didn't cause error
         self.assertEquals(response.status_code, 200)

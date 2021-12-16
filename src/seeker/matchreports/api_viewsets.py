@@ -8,7 +8,7 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from . import models
-from .api_serializers import DeckLeaderboardSerializer, MatchSerializer, LeaderboardSerializer, UserSerializer, get_deck_leaderboard
+from .api_serializers import DeckLeaderboardSerializer, MatchSerializer, UserSerializer, get_deck_leaderboard
 
 def setup_eager_loading(get_queryset):
     def decorator(self):
@@ -40,6 +40,13 @@ class MatchViewSet(viewsets.ModelViewSet):
         return queryset.order_by('-date')
 
 
+class UserViewSet(viewsets.ModelViewSet):
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    http_method_names = ['get', 'head']
+    queryset = models.User.objects.all()
+
+
 class DeckViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
     filterset_fields = ['guild', 'channel_id']
@@ -57,36 +64,43 @@ class DeckViewSet(viewsets.ViewSet):
         pass
 
 
-class UserViewSet(viewsets.ModelViewSet):
-    serializer_class = UserSerializer
-    filterset_fields = []
-    permission_classes = [permissions.IsAuthenticated]
-    http_method_names = ['get', 'list', 'head']
+class AggregateView(views.APIView):
 
-    def retrieve(self, request, pk=None):
-        serializer = LeaderboardSerializer(self._get_user_stats().filter(user_id=pk).first())
-        return Response(serializer.data)
+    def filter_reports(self, request):
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        guild_id = request.query_params.get('guild')
+        channel_id = request.query_params.get('channel_id')
+        reports = models.Report.objects.all()
+
+        if guild_id:
+            reports = reports.filter(match__guild=guild_id)
+        if start_date:
+            date = timezone.make_aware(datetime.fromtimestamp(int(start_date)), timezone.utc)
+            reports = reports.filter(match__date__gte=date)
+        if end_date:
+            date = timezone.make_aware(datetime.fromtimestamp(int(end_date)), timezone.utc)
+            reports = reports.filter(match__date__lt=date)
+        if channel_id:
+            reports = reports.filter(match__channel_id=channel_id)
+
+        return reports
 
 
-class StatsView(views.APIView):
+class DeckView(AggregateView):
     pass
 
 
-class LeaderboardView(views.APIView):
+class LeaderboardView(AggregateView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, format=None):
-
-        params = {
-            'start_date': request.query_params.get('start_date'),
-            'end_date': request.query_params.get('end_date'),
-            'guild_id': request.query_params.get('guild'),
-            'channel_id': request.query_params.get('channel_id')
-        }
+        reports = self.filter_reports(request)
 
         leaderboard = []
         for user in models.User.objects.all():
-            won, played = user.get_stats(**params)
+            won =  user.games_won(reports) 
+            played = user.games_played(reports)
             if won and played:
                 winrate = won / played if played != 0 else 0
                 user_entry = {

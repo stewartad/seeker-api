@@ -5,7 +5,7 @@
 #   * Make sure each ForeignKey has `on_delete` set to the desired behavior.
 #   * Remove `managed = False` lines if you wish to allow Django to create, modify, and delete the table
 # Feel free to rename the models, but don't rename db_table values or field names.
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.db import models
 from django.db.models.aggregates import Sum
 from django.db.models.expressions import OuterRef, Subquery
@@ -46,22 +46,39 @@ class User(models.Model):
     def __str__(self):
         return self.name
 
-    def get_stats(self, guild_id=None, channel_id=None, start_date=None, end_date=None):
-        reports = Report.objects.filter(user=self.user_id)
-        if guild_id:
-            reports = reports.filter(match__guild=guild_id)
-        if start_date:
-            date = timezone.make_aware(datetime.fromtimestamp(int(start_date)), timezone.utc)
-            reports = reports.filter(match__date__gte=date)
-        if end_date:
-            date = timezone.make_aware(datetime.fromtimestamp(int(end_date)), timezone.utc)
-            reports = reports.filter(match__date__lt=date)
-        if channel_id:
-            reports = reports.filter(match__channel_id=channel_id)
+    def recent_stats(self):
+        now = timezone.now()
+        reports_30days = Report.objects.filter(match__date__gte=now - timedelta(days=30),
+                                                match__date__lt=now)
+        reports_90days = Report.objects.filter(match__date__gte=now - timedelta(days=90),
+                                                match__date__lt=now)
+        return {
+            '30d': {
+                'games_won': self.games_won(reports_30days),
+                'games_players': self.games_played(reports_30days)
+            },
+            '90d': {
+                'games_won': self.games_won(reports_90days),
+                'games_players': self.games_played(reports_90days)
+            },
+            'all_time': {
+                'games_won': self.games_won(),
+                'games_players': self.games_played()
+            }
+        }        
 
-        agg = reports.aggregate(won_games=Sum('games'), total_games=Sum('match__reports__games'))
 
-        return agg['won_games'], agg['total_games']
+    def games_won(self, reports=None):
+        if not reports:
+            reports = Report.objects.all()
+        reports = reports.filter(user=self)
+        return reports.aggregate(won=Sum('games'))['won']
+
+    def games_played(self, reports=None):
+        if not reports:
+            reports = Report.objects.all()
+        reports = reports.filter(user=self)
+        return reports.aggregate(total=Sum('match__reports__games'))['total']
 
 
 class Report(models.Model):
