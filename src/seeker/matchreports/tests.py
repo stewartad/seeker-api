@@ -43,6 +43,26 @@ class SeekerTestCase(TestCase):
     def setUpClass(cls) -> None:
         cls.user = DjangoUser.objects.create_user(cls.__name__, 'admin@email.com', 'password')
         cls.factory = APIRequestFactory()
+        cls.guild = {
+            'guild_id': 1000,
+            'name': 'testguild'
+        }
+        cls.guild2 = {
+            'guild_id': 2000,
+            'name': 'testguild2'
+        }
+        cls.user1 = {
+            'user_id': 236379624727248897,
+            'name': 'yequari#2049',
+        }
+        cls.user2 = {
+            'user_id': 770128100918296638,
+            'name': 'yeq2#5677'
+        }
+        cls.user3 = {
+            'user_id': 788139124628258816,
+            'name': 'yeq3#0869'
+        }
         return super().setUpClass()
 
     @classmethod
@@ -185,18 +205,11 @@ class TestAPIMethods(SeekerTestCase):
         most_recent_matches = self._get_matches(player=user_yequari, guild_id=test_guild['guild_id'], start_date=prev_hour, end_date=now).data
         self.assertEqual(len(most_recent_matches), 1)
 
-class TestMatchAggregation(SeekerTestCase):
+class TestLeaderboard(SeekerTestCase):
     
     @classmethod
     def setUpClass(cls) -> None:
-        cls.guild = test_guild
-        cls.guild2 = {
-            'guild_id': 2000,
-            'name': 'testguild2'
-        }
-        cls.user1 = user_yequari
-        cls.user2 = user_yeq2
-        cls.user3 = user_yeq3
+        
 
         # get current time
         cls.now = timezone.now()
@@ -306,8 +319,15 @@ class TestMatchAggregation(SeekerTestCase):
             self.assertEquals(entry.get('games_played'), self.expected_all)
             self.assertEquals(entry.get('games_won'), self.expected_all / 2)
 
-    def test_stats_weekly(self):
-        # TODO: stats testing
+
+class TestStats(SeekerTestCase):
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        cls._create_match(cls.guild, cls.user1, cls.user2)
+
+    def test_stats(self):
+        # TODO: improve test coverage of stats, this is a trivial test
         request = self.factory.get(f'{API}/users', format='json')
        
         force_authenticate(request, user=self.user)
@@ -318,17 +338,10 @@ class TestMatchAggregation(SeekerTestCase):
         # assert request didn't cause error
         self.assertEquals(response.status_code, 200)
         # assert correct number of games played
-        self.assertEquals(response.data.get('games_played'), self.expected_weekly)
-        self.assertEquals(response.data.get('games_won'), self.expected_weekly / 2)
+        stats = response.data.get('stats')
+        self.assertIsNotNone(stats['30d']['games_played'])
+        self.assertIsNotNone(stats['30d']['games_won'])
 
-    # def test_stats_monthly(self):
-    #     self.assertTrue(False)
-
-    # def test_stats_yearly(self):
-    #     self.assertTrue(False)
-
-    # def test_stats_alltime(self):
-    #     self.assertTrue(False)
 
 class TestDeckStats(SeekerTestCase):
 

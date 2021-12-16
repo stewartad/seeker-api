@@ -39,7 +39,7 @@ def get_deck_leaderboard(guild_id, channel_id, start_date=None, end_date=None):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    stats = DictField(source='recent_stats', read_only=True)
+    stats = DictField(child=DictField(child=IntegerField()), source='recent_stats', read_only=True)
 
     class Meta:
         model = models.User

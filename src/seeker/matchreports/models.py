@@ -55,15 +55,15 @@ class User(models.Model):
         return {
             '30d': {
                 'games_won': self.games_won(reports_30days),
-                'games_players': self.games_played(reports_30days)
+                'games_played': self.games_played(reports_30days)
             },
             '90d': {
                 'games_won': self.games_won(reports_90days),
-                'games_players': self.games_played(reports_90days)
+                'games_played': self.games_played(reports_90days)
             },
             'all_time': {
                 'games_won': self.games_won(),
-                'games_players': self.games_played()
+                'games_played': self.games_played()
             }
         }        
 
