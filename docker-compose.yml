@@ -1,0 +1,46 @@
+version: '3.3'
+
+services:
+  web:
+    build: 
+      context: src/seeker
+      dockerfile: Dockerfile-dev
+    container_name: django_web
+    command: python manage.py runserver 0.0.0.0:8000
+    env_file:
+      - seekerapi.env
+    environment:
+      - DJANGO_SETTINGS_MODULE=seeker.test_settings
+    links:
+      - db:db
+    depends_on:
+      - db
+    volumes:
+      - ./src/seeker:/app
+    ports:
+      - "8000:8000"
+  db:
+    image: mysql:5.7
+    restart: always
+    env_file:
+      - db.env
+    ports:
+      - '30000:3306'
+    expose:
+      - '3306'
+    volumes:
+      - my-db:/var/lib/mysql
+  seekerbot:
+    build:
+      context: src/seekerbot
+      dockerfile: Dockerfile-dev
+    container_name: seekerbot
+    env_file:
+      - seekerbot.env
+    links:
+      - web:web
+    depends_on:
+      - web
+volumes:
+  my-db:
+
