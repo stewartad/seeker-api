@@ -12,7 +12,7 @@ warnings.filterwarnings(
 )
 
 from .models import *
-from .api_viewsets import DeckViewSet, LeaderboardViewSet, MatchViewSet
+from .api_viewsets import DeckViewSet, LeaderboardView, MatchViewSet, UserViewSet
 
 user_yequari = {
     'user_id': 236379624727248897,
@@ -43,6 +43,26 @@ class SeekerTestCase(TestCase):
     def setUpClass(cls) -> None:
         cls.user = DjangoUser.objects.create_user(cls.__name__, 'admin@email.com', 'password')
         cls.factory = APIRequestFactory()
+        cls.guild = {
+            'guild_id': 1000,
+            'name': 'testguild'
+        }
+        cls.guild2 = {
+            'guild_id': 2000,
+            'name': 'testguild2'
+        }
+        cls.user1 = {
+            'user_id': 236379624727248897,
+            'name': 'yequari#2049',
+        }
+        cls.user2 = {
+            'user_id': 770128100918296638,
+            'name': 'yeq2#5677'
+        }
+        cls.user3 = {
+            'user_id': 788139124628258816,
+            'name': 'yeq3#0869'
+        }
         return super().setUpClass()
 
     @classmethod
@@ -119,7 +139,7 @@ class SeekerTestCase(TestCase):
             format='json')
         
         force_authenticate(request, user=cls.user)
-        view = LeaderboardViewSet.as_view({'get': 'list'})
+        view = LeaderboardView.as_view()
         return view(request)
 
     @classmethod
@@ -185,18 +205,11 @@ class TestAPIMethods(SeekerTestCase):
         most_recent_matches = self._get_matches(player=user_yequari, guild_id=test_guild['guild_id'], start_date=prev_hour, end_date=now).data
         self.assertEqual(len(most_recent_matches), 1)
 
-class TestMatchAggregation(SeekerTestCase):
+class TestLeaderboard(SeekerTestCase):
     
     @classmethod
     def setUpClass(cls) -> None:
-        cls.guild = test_guild
-        cls.guild2 = {
-            'guild_id': 2000,
-            'name': 'testguild2'
-        }
-        cls.user1 = user_yequari
-        cls.user2 = user_yeq2
-        cls.user3 = user_yeq3
+        
 
         # get current time
         cls.now = timezone.now()
@@ -259,6 +272,7 @@ class TestMatchAggregation(SeekerTestCase):
         self.assertEquals(len(response.data), 2)
         for entry in response.data:
             self.assertEquals(entry.get('games_played'), 4)
+            self.assertEquals(entry.get('games_won'), 2)
 
     def test_leaderboard_weekly(self):
         response = self._get_leaderboard(guild_id=self.guild["guild_id"], start_date=self.weekstart, end_date=self.nextweekstart)
@@ -270,6 +284,7 @@ class TestMatchAggregation(SeekerTestCase):
         # assert correct number of games played
         for entry in response.data:
             self.assertEquals(entry.get('games_played'), self.expected_weekly)
+            self.assertEquals(entry.get('games_won'), self.expected_weekly / 2)
 
     def test_leaderboard_monthly(self):
         response = self._get_leaderboard(guild_id=self.guild["guild_id"], start_date=self.monthstart, end_date=self.nextmonthstart)
@@ -280,6 +295,7 @@ class TestMatchAggregation(SeekerTestCase):
         # assert correct number of games played
         for entry in response.data:
             self.assertEquals(entry.get('games_played'), self.expected_monthly)
+            self.assertEquals(entry.get('games_won'), self.expected_monthly / 2)
 
     def test_leaderboard_yearly(self):
         response = self._get_leaderboard(guild_id=self.guild["guild_id"], start_date=self.yearstart, end_date=self.nextyearstart)
@@ -290,6 +306,7 @@ class TestMatchAggregation(SeekerTestCase):
         # assert correct number of games played
         for entry in response.data:
             self.assertEquals(entry.get('games_played'), self.expected_yearly)
+            self.assertEquals(entry.get('games_won'), self.expected_yearly / 2)
 
     def test_leaderboard_alltime(self):
         response = self._get_leaderboard(guild_id=self.guild["guild_id"])
@@ -300,36 +317,31 @@ class TestMatchAggregation(SeekerTestCase):
         # assert correct number of games played
         for entry in response.data:
             self.assertEquals(entry.get('games_played'), self.expected_all)
+            self.assertEquals(entry.get('games_won'), self.expected_all / 2)
 
-    def test_stats_weekly(self):
-        # TODO: stats testing
-        request = self.factory.get(f'{API}/leaderboard/',
-            {
-                'guild': self.guild["guild_id"],
-                'start_date': int(self.weekstart.timestamp()),
-                'end_date': int(self.nextweekstart.timestamp())
-            }, 
-            format='json')
+
+class TestStats(SeekerTestCase):
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        cls._create_match(cls.guild, cls.user1, cls.user2)
+
+    def test_stats(self):
+        # TODO: improve test coverage of stats, this is a trivial test
+        request = self.factory.get(f'{API}/users', format='json')
        
         force_authenticate(request, user=self.user)
-        view = LeaderboardViewSet.as_view({'get': 'retrieve'})
+        view = UserViewSet.as_view({'get': 'retrieve'})
         # import pdb; pdb.set_trace()
-        response = view(request, pk=user_yequari['user_id'])
+        response = view(request, pk=self.user1['user_id'])
         
         # assert request didn't cause error
         self.assertEquals(response.status_code, 200)
         # assert correct number of games played
-        self.assertEquals(response.data.get('games_played'), self.expected_weekly)
-        self.assertEquals(response.data.get('games_won'), self.expected_weekly / 2)
+        stats = response.data.get('stats')
+        self.assertIsNotNone(stats['30d']['games_played'])
+        self.assertIsNotNone(stats['30d']['games_won'])
 
-    # def test_stats_monthly(self):
-    #     self.assertTrue(False)
-
-    # def test_stats_yearly(self):
-    #     self.assertTrue(False)
-
-    # def test_stats_alltime(self):
-    #     self.assertTrue(False)
 
 class TestDeckStats(SeekerTestCase):
 

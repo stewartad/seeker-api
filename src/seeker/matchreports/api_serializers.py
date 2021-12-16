@@ -1,6 +1,7 @@
 from django.db.models.aggregates import Sum
 from django.db.models.expressions import OuterRef, Subquery
 from django.shortcuts import get_object_or_404
+from rest_framework.fields import DictField, IntegerField
 from . import models
 from rest_framework import serializers
 from datetime import datetime, timezone
@@ -38,9 +39,11 @@ def get_deck_leaderboard(guild_id, channel_id, start_date=None, end_date=None):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    stats = DictField(child=DictField(child=IntegerField()), source='recent_stats', read_only=True)
+
     class Meta:
         model = models.User
-        fields = ('user_id', 'name')
+        fields = ('user_id', 'name', 'stats')
         extra_kwargs = {
             'user_id': {
                 'validators': []
@@ -64,25 +67,6 @@ class GuildSerializer(serializers.ModelSerializer):
             'guild_id': {
                 'validators': []
             }
-        }
-
-
-class LeaderboardSerializer(serializers.Serializer):
-    def to_representation(self, instance):
-        won_games = instance.won_games
-        total_games = instance.total_games
-        if won_games is None:
-            won_games = 0
-        if total_games is None:
-            total_games = 0
-
-        winrate = won_games / total_games if total_games != 0 else 0
-        return {
-            'user_id': instance.user_id,
-            'name': instance.name,
-            'games_played': total_games,
-            'games_won': won_games,
-            'winrate': winrate
         }
 
 
