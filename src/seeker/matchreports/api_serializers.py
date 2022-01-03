@@ -1,7 +1,7 @@
 from django.db.models.aggregates import Sum
 from django.db.models.expressions import OuterRef, Subquery
 from django.shortcuts import get_object_or_404
-from rest_framework.fields import DictField, IntegerField
+from rest_framework.fields import DictField, FloatField, IntegerField
 from . import models
 from rest_framework import serializers
 from datetime import datetime, timezone
@@ -39,7 +39,7 @@ def get_deck_leaderboard(guild_id, channel_id, start_date=None, end_date=None):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    stats = DictField(child=DictField(child=IntegerField()), source='recent_stats', read_only=True)
+    stats = DictField(child=DictField(child=FloatField()), source='recent_stats', read_only=True)
 
     class Meta:
         model = models.User
