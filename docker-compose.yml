@@ -41,6 +41,8 @@ services:
       - web:web
     depends_on:
       - web
+    volumes:
+      - ./src/seekerbot:/app
 volumes:
   my-db:
 
