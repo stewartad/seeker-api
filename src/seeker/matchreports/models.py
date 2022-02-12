@@ -49,13 +49,15 @@ class User(models.Model):
     def recent_stats(self):
         now = timezone.now()
         stats = {}
-        intervals = [30, 90, 0] # days
+        intervals = [7, 30, 90, 0] # days
         reports = None
         for i in intervals:
             if i > 0:
-                reports = Report.objects.filter(match__date__gte=now - timedelta(days=i))
-            won = self.games_won(reports)
-            played = self.games_played(reports)
+                won = self.games_won(reports=Report.objects.filter(match__date__gte=(now - timedelta(days=i))))
+                played = self.games_played(reports=Report.objects.filter(match__date__gte=(now - timedelta(days=i))))
+            else:
+                won = self.games_won()
+                played = self.games_played()
             winrate = won / played if played > 0 else 0
             stats[f'{i}d'] = {
                 'games_won': won,

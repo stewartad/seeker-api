@@ -22,6 +22,14 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ['SECRET_KEY']
 
+DEBUG = int(os.environ.get("DEBUG", default=0))
+
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")
+
+CSRF_COOKIE_SECURE = bool(os.environ.get("CSRF_COOKIE_SECURE"), default=True)
+SESSION_COOKIE_SECURE = bool(os.environ.get("SESSION_COOKIE_SECURE", default=True))
+SECURE_SSL_REDIRECT = bool(os.environ.get("SECURE_SSL_REDIRECT", default=True))
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -121,10 +129,11 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [
-    "static"
+    "static",
+    "templates"
 ]
 
-STATIC_ROOT = '/var/www/yequari.com/static'
+STATIC_ROOT = f'{BASE_DIR}/staticfiles'
 
 # rest_framework permissions
 REST_FRAMEWORK = {
