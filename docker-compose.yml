@@ -13,9 +13,6 @@ services:
       - 8000:8000
     env_file:
       - ./prod.env
-    networks:
-      seeker_net:
-        ipv4_address: 172.16.238.10
   bot:
     build:
       context: ./src/seekerbot
@@ -27,27 +24,20 @@ services:
       - api
     volumes:
       - ./src/seekerbot:/usr/src/app
-    networks:
-      seeker_net:
-        ipv4_address: 172.16.238.11
   nginx:
     build: ./src/nginx
     volumes:
       - static_volume:/home/app/api/staticfiles
+      - ./src/nginx:/etc/nginx/conf.d
+      - ./src/certbot/conf:/etc/letsencrypt
+      - ./src/certbot/www:/var/www/certbot
     ports:
-      - 1337:80
+      - 80:80
+      - 443:443
     depends_on:
       - api
-    networks:
-      seeker_net:
-networks:
-  seeker_net:
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.16.238.0/24
-          gateway: 172.16.238.1
+  certbot:
+    image: certbot/certbot
 volumes:
   static_volume:
 
