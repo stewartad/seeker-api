@@ -38,6 +38,9 @@ services:
       - api
   certbot:
     image: certbot/certbot
+    volumes:
+      - ./src/certbot/conf:/etc/letsencrypt
+      - ./src/certbot/www:/var/www/certbot
 volumes:
   static_volume:
 
