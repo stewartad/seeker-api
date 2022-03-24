@@ -26,7 +26,7 @@ DEBUG = int(os.environ.get("DEBUG", default=0))
 
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")
 
-CSRF_COOKIE_SECURE = bool(os.environ.get("CSRF_COOKIE_SECURE"), default=True)
+CSRF_COOKIE_SECURE = bool(os.environ.get("CSRF_COOKIE_SECURE", default=True))
 SESSION_COOKIE_SECURE = bool(os.environ.get("SESSION_COOKIE_SECURE", default=True))
 SECURE_SSL_REDIRECT = bool(os.environ.get("SECURE_SSL_REDIRECT", default=True))
 
